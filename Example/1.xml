@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+  <model id="SimpleModel_L2V3">
+
+    <listOfCompartments>
+      <compartment id="cell" size="1" constant="true"/>
+    </listOfCompartments>
+
+    <listOfSpecies>
+      <species id="A" compartment="cell" initialAmount="10" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="B" compartment="cell" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="C" compartment="cell" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+    </listOfSpecies>
+
+    <listOfParameters>
+      <parameter id="k1" value="0.1" constant="true"/>
+      <parameter id="k2" value="0.2" constant="true"/>
+    </listOfParameters>
+
+    <listOfReactions>
+
+      <!-- Reaction 1: A → B -->
+      <reaction id="R1" reversible="false">
+        <listOfReactants>
+          <speciesReference species="A" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="B" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>k1</ci>
+              <ci>A</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <!-- Reaction 2: B → C -->
+      <reaction id="R2" reversible="false">
+        <listOfReactants>
+          <speciesReference species="B" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>k2</ci>
+              <ci>B</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+    </listOfReactions>
+
+  </model>
+</sbml>
