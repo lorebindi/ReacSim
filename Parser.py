@@ -1,18 +1,7 @@
-import math
-import random
-import libsbml
-import re
-import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
-import os
+from Constants import *
 
-TIME = '_time_'
-ID = "id"
-REACTANTS = "reactants"
-PRODUCTS = "products"
-RATE = "rate"
-PARAMETERS = "parameters"
+import libsbml
+import matplotlib.pyplot as plt
 
 def readSBMLfile(filename):
     reader = libsbml.SBMLReader()
@@ -91,12 +80,8 @@ def extract_reactions(model):
             return None
 
         formula = kinetic_law.getFormula()
-        '''if not is_mass_action(formula, reactants_ids):
-            return None'''
 
         reaction[RATE] = formula
-
-        #TODO: supporto ad altre o qualsiasi legge cineticha
 
         #TODO: inferimento della legge cinetica da dati forniti tramite file csv.
         # 1. Come diciamo quale reazione deve passare da l'inferimento?
@@ -108,86 +93,10 @@ def extract_reactions(model):
 
         reactions.append(reaction)
 
+        #TODO: gestione degli eventi.
+
     return reactions
 
-def is_mass_action(formula, reactant_ids):
-    if formula is None:
-        return False
-
-    # Rimuovi spazi
-    formula = formula.replace(" ", "")
-
-    # La formula deve contenere solo una costante e i reagenti (es. "k*A*B")
-    pattern = r'^[\w\.]+(\*[\w\.]+)*$'
-    if not re.fullmatch(pattern, formula):
-        return False
-
-    # Tutti i reagenti devono essere presenti
-    for rid in reactant_ids:
-        if rid not in formula:
-            return False
-
-    return True
-
-def evaluate_rate(formula, species, parameters):
-    local_dict = {}
-    local_dict.update(species)
-    local_dict.update(parameters)
-
-    try:
-        return eval(formula, {"__builtins__": None, "math": math}, local_dict)
-    except:
-        return 0.0
-
-def gillespie_ssa (model, t_max):
-    t = 0.0
-
-    state = extract_species(model)
-    if state is None:
-        return None
-
-    reactions = extract_reactions(model)
-    if reactions is None:
-        return None
-
-    evolution = {TIME: [t]}
-    evolution.update({id: [amount] for id,amount in state.items()})
-
-    while t < t_max:
-        propensities = []
-        for r in reactions:
-            propensities.append(evaluate_rate(r[RATE], state, r[PARAMETERS]))
-
-        a0 = sum(propensities)
-        if a0 == 0:
-            break
-
-        # New time
-        y = random.random()
-        tau = -math.log(y) / a0
-        t += tau
-
-        #Reaction choose
-        n = random.random() * a0
-        cumulative = 0.0
-        for i, a in enumerate(propensities):
-            cumulative += a
-            if n < cumulative:
-                chosen = i
-                break
-
-        # Update of state
-        r = reactions[chosen]
-        for s, stoich in r[REACTANTS].items():
-            state[s] -= stoich
-        for p, stoich in r[PRODUCTS].items():
-            state[p] += stoich
-
-        evolution[TIME].append(t)
-        for s_id in state:
-            evolution[s_id].append(state[s_id])
-
-    return evolution
 
 def plot(evolution, save_dir=None):
     if evolution is None: return None
@@ -211,8 +120,6 @@ def plot(evolution, save_dir=None):
     plt.ylim(bottom=0)
     plt.tight_layout()
     plt.show()
-
-    # Horizontal line graph with letters on the Y-axis
 
 
 

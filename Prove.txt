@@ -277,3 +277,21 @@ def _crea_grafo_linee_ffvsOS(applicazione, parallelism, max_batch, titolo, datif
 
 
 
+def is_mass_action(formula, reactant_ids):
+    if formula is None:
+        return False
+
+    # Rimuovi spazi
+    formula = formula.replace(" ", "")
+
+    # La formula deve contenere solo una costante e i reagenti (es. "k*A*B")
+    pattern = r'^[\w\.]+(\*[\w\.]+)*$'
+    if not re.fullmatch(pattern, formula):
+        return False
+
+    # Tutti i reagenti devono essere presenti
+    for rid in reactant_ids:
+        if rid not in formula:
+            return False
+
+    return True
