@@ -7,8 +7,9 @@ import Parser
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    model=Parser.readSBMLfile('/home/lorenzo/Desktop/ReacSim/Example/1.xml')
-    Parser.gillespie_ssa(model,10)
+    model=Parser.readSBMLfile('/home/lorenzo/Desktop/ReacSim/Example/2.xml')
+    evolution=Parser.gillespie_ssa(model,10.0)
+    Parser.plot(evolution)
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

@@ -136,8 +136,8 @@ def gillespie_simulation(species, reactions, t_max):
             break  # Nessuna reazione può avvenire
 
         # Tempo alla prossima reazione
-        r1 = random.random()
-        tau = -math.log(r1) / a0
+        y = random.random()
+        tau = -math.log(y) / a0
         time += tau
 
         # Quale reazione avviene
@@ -177,7 +177,91 @@ if __name__ == "__main__":
 
 
 
+def _crea_grafo_linee_ffvsOS(applicazione, parallelism, max_batch, titolo, datiff, datiOS, max_y):
+    if not datiff or not datiOS:
+        raise ValueError("Il parametro 'dati' è vuoto o non valido.")
+    etichette_asse_x = ['0'] + [str(2 ** i) for i in range(1, max_batch) if 2 ** i <= max_batch]
+    #etichette_asse_x = ["Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4", "Scenario 5", "Scenario 6","Scenario 7"]
+    medie_ff = [val['media'] for val in datiff.values()]  # Estrae il valore 'media' per ogni elemento
+    dev_std_ff = [val['dev_std'] for val in datiff.values()]  # Estrae il valore 'dev_std' per ogni elemento
+    medie_OS = [val['media'] for val in datiOS.values()]  # Estrae il valore 'media' per ogni elemento
+    dev_std_OS = [val['dev_std'] for val in datiOS.values()]  # Estrae il valore 'dev_std' per ogni elemento
+    #dati_asse_x = [1_000_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000, 6_000_000, 6_999_999]
+    # Calcolo del rapporto media/deviazione standard
+    rapporto_soglia = 0.008
+    save_dir = '/home/lorenzo/Desktop/Grafici_Tesi/ffvsOS'
 
+    # Creazione del grafico
+    plt.figure(figsize=(6, 4))
+
+    # Calcola le etichette e i valori dei ticks per l'asse Y
+    yticks_values, yticks_labels = _calcola_etichette_assey_app(applicazione, max_y)
+    if(yticks_values == [] or yticks_labels == []):
+        raise ValueError("yticks vuoti")
+    plt.yticks(yticks_values, yticks_labels, fontsize=12)
+
+    # Aggiungere un margine extra al limite dell'asse Y
+    plt.ylim(min(yticks_values), max(yticks_values))
+
+    # Impostiamo i limiti dell'asse X in modo che parta da 0 e arrivi al massimo valore dei dati
+    plt.xlim(-0.5,
+             len(etichette_asse_x) - 0.5)  # L'asse X avrà solo 2 etichette, quindi va da -0.5 a 1.5 per centrare le barre
+
+    #Disegnare le linee orizzontali per ogni valore di yticks_values
+    for ytick in yticks_values:
+        plt.hlines(ytick, -0.5, len(etichette_asse_x) - 0.5, colors='gray', linestyles='--', linewidth=0.6,
+                   zorder=1)  # Linea tratteggiata, zorder basso per metterle sotto le barre
+    # Aggiungere linee a metà tra ogni intervallo
+    for i in range(1, len(yticks_values)):
+        halfway = (yticks_values[i] + yticks_values[i - 1]) / 2  # Calcolare il punto centrale tra i tick
+        plt.hlines(halfway, -0.5, len(etichette_asse_x) - 0.5, colors='lightgray', linestyles='--',
+                   linewidth=0.8)  # Linea leggera tra i tick
+
+    # Linea per datiff (FastFlow) con barre di errore
+    plt.errorbar(
+        etichette_asse_x, medie_ff, yerr=dev_std_ff,
+        label='FastFlow pinning throughput', marker='s', color='#1B4F72',
+        linestyle='-', linewidth=2, elinewidth=1.5, capsize=0
+    )
+
+    # Linea per datiOS con barre di errore
+    plt.errorbar(
+        etichette_asse_x, medie_OS, yerr=dev_std_OS,
+        label='OS Scheduler throughput ', marker='s', color='#C41E3A',
+        linestyle='-', linewidth=2, elinewidth=1, capsize=0
+    )
+
+    # Linea per datiff (FastFlow)
+    #plt.plot(etichette_asse_x, medie_ff, label=r'$\mu$ throughput FastFlow pinning', marker='s', color='#1B4F72', linestyle='-', linewidth=2)
+
+    # Linea per datiOS
+    #plt.plot(etichette_asse_x, medie_OS, label=r'$\mu$ throughput OS scheduler', marker='s', color='#C41E3A', linestyle='-', linewidth=2)
+
+
+    # Titoli e etichette
+    plt.title(titolo, fontsize=16)
+    plt.xlabel('Batch Size', fontsize=14)
+    if applicazione == "SD":
+        plt.ylabel('Throughput (M t/s)', fontsize=14)
+    if applicazione == "WC":
+        plt.ylabel('Throughput (MB/s)', fontsize=14)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+
+    # Legenda
+    plt.legend(fontsize=10, loc='upper left')
+
+    # Griglia
+    #plt.grid(visible=True, linestyle='--', alpha=0.6)
+
+    # Salvataggio del grafico
+    save_path = os.path.join(save_dir, f"{applicazione+"_"+parallelism}.png")
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=900)
+    print(f"Grafico salvato in: {save_path}")
+
+    # Mostra il grafico
+    plt.show()
 
 
 

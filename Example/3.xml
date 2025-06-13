@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+  <model id="GeneExpressionModel">
+
+    <listOfCompartments>
+      <compartment id="cytoplasm" size="1" constant="true"/>
+      <compartment id="nucleus" size="1" constant="true"/>
+    </listOfCompartments>
+
+    <listOfSpecies>
+      <species id="DNA" compartment="nucleus" initialAmount="800" boundaryCondition="true" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="mRNA" compartment="nucleus" initialAmount="900" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="Protein" compartment="cytoplasm" initialAmount="200" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="Protein_nuc" compartment="nucleus" initialAmount="200" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+    </listOfSpecies>
+
+    <listOfParameters>
+      <parameter id="k_transcription" value="3.0" constant="true"/>
+      <parameter id="k_translation" value="22.2" constant="true"/>
+      <parameter id="k_transport" value="11.6" constant="true"/>
+    </listOfParameters>
+
+    <listOfReactions>
+
+      <!-- Transcription: DNA → mRNA -->
+      <reaction id="Transcription" reversible="false">
+        <listOfProducts>
+          <speciesReference species="mRNA" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>k_transcription</ci>
+              <ci>DNA</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <!-- Translation: mRNA → Protein -->
+      <reaction id="Translation" reversible="false">
+        <listOfReactants>
+          <speciesReference species="mRNA" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Protein" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>k_translation</ci>
+              <ci>mRNA</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <!-- Transport: Protein → Protein_nuc -->
+      <reaction id="ProteinTransport" reversible="false">
+        <listOfReactants>
+          <speciesReference species="Protein" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Protein_nuc" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>k_transport</ci>
+              <ci>Protein</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+    </listOfReactions>
+
+  </model>
+</sbml>

@@ -8,8 +8,8 @@
 
     <listOfSpecies>
       <species id="A" compartment="cell" initialAmount="10" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
-      <species id="B" compartment="cell" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
-      <species id="C" compartment="cell" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="B" compartment="cell" initialAmount="5" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="C" compartment="cell" initialAmount="5" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
     </listOfSpecies>
 
     <listOfParameters>
