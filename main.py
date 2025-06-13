@@ -1,4 +1,5 @@
 # This is a sample Python script.
+import os
 from Parser import *
 from Simulation_methods import *
 from Graph_generation import *
@@ -11,7 +12,7 @@ from Graph_generation import *
 if __name__ == '__main__':
     current_dir = os.path.dirname(__file__)
     file_path = os.path.join(current_dir, "Example", "2.xml")
-    model = Parser.readSBMLfile(file_path)
-    evolution = Parser.gillespie_ssa(model, 1)
+    model = Parser.read_SBML_file(file_path)
+    evolution = gillespie_ssa(model, 1)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
