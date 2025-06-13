@@ -19,11 +19,15 @@ def gillespie_ssa (model, t_max):
 
     state = Parser.extract_species(model)
     if state is None:
-        return None
+        raise Exception("Model has no species")
 
     reactions = Parser.extract_reactions(model)
     if reactions is None:
-        return None
+        raise Exception("Model has no reactions")
+
+    parameters = Parser.extract_parameters(model)
+    if parameters is None:
+        raise Exception("Model has no parameters")
 
     evolution = {TIME: [t]}
     evolution.update({id: [amount] for id,amount in state.items()})
@@ -31,7 +35,7 @@ def gillespie_ssa (model, t_max):
     while t < t_max:
         propensities = []
         for r in reactions:
-            propensities.append(evaluate_rate(r[RATE], state, r[PARAMETERS]))
+            propensities.append(evaluate_rate(r[RATE], state, parameters))
 
         a0 = sum(propensities)
         if a0 == 0:

@@ -2,9 +2,9 @@ from Constants import *
 
 import matplotlib.pyplot as plt
 
-def plot(evolution, save_dir=None):
-    if evolution is None: return None
-    if TIME not in evolution: return None
+def plot(evolution, t_max, save_dir=None):
+    if evolution is None: raise Exception("Evolution is None")
+    if TIME not in evolution: raise Exception("Evolution does not contain time")
 
     time_values = evolution[TIME]
     specie_names = [k for k in evolution if k != TIME]
@@ -20,7 +20,7 @@ def plot(evolution, save_dir=None):
     plt.title("Evolution of species over time")
     plt.legend(loc="upper right")
     plt.grid(True)
-    plt.xlim(left=0)
+    plt.xlim(0, t_max)
     plt.ylim(bottom=0)
     plt.tight_layout()
     plt.show()
