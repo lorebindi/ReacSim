@@ -9,6 +9,7 @@ def read_SBML_file(filename):
 
     # Check the validity of the document
     if SBMLdocument.getNumErrors() > 0:
+        SBMLdocument.printErrors()
         raise Exception("Reading error")
 
     # Make sure the file uses level 3

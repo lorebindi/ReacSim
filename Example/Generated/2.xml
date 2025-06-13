@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+  <model id="ExtendedGeneExpressionModel">
+
+    <listOfCompartments>
+      <compartment id="nucleus" size="1" constant="true"/>
+      <compartment id="cytoplasm" size="1" constant="true"/>
+    </listOfCompartments>
+
+    <listOfSpecies>
+      <species id="GeneA" compartment="nucleus" initialAmount="1000" boundaryCondition="true" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="GeneB" compartment="nucleus" initialAmount="800" boundaryCondition="true" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="mRNA_A" compartment="nucleus" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="mRNA_B" compartment="nucleus" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="ProteinA" compartment="cytoplasm" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="ProteinB" compartment="cytoplasm" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="ProteinA_nuc" compartment="nucleus" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+    </listOfSpecies>
+
+    <listOfParameters>
+      <parameter id="k_transcription_A" value="2.5" constant="true"/>
+      <parameter id="k_transcription_B" value="3.0" constant="true"/>
+      <parameter id="k_translation_A" value="20.0" constant="true"/>
+      <parameter id="k_translation_B" value="18.0" constant="true"/>
+      <parameter id="k_transport_A" value="5.0" constant="true"/>
+      <parameter id="k_deg_mRNA" value="0.5" constant="true"/>
+      <parameter id="k_deg_protein" value="0.2" constant="true"/>
+    </listOfParameters>
+
+    <listOfReactions>
+
+      <reaction id="TranscriptionA" reversible="false">
+        <listOfProducts>
+          <speciesReference species="mRNA_A" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/>
+              <ci>k_transcription_A</ci>
+              <ci>GeneA</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="TranscriptionB" reversible="false">
+        <listOfProducts>
+          <speciesReference species="mRNA_B" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/>
+              <ci>k_transcription_B</ci>
+              <ci>GeneB</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="TranslationA" reversible="false">
+        <listOfReactants>
+          <speciesReference species="mRNA_A" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="ProteinA" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/>
+              <ci>k_translation_A</ci>
+              <ci>mRNA_A</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="TranslationB" reversible="false">
+        <listOfReactants>
+          <speciesReference species="mRNA_B" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="ProteinB" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/>
+              <ci>k_translation_B</ci>
+              <ci>mRNA_B</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="TransportProteinA" reversible="false">
+        <listOfReactants>
+          <speciesReference species="ProteinA" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="ProteinA_nuc" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/>
+              <ci>k_transport_A</ci>
+              <ci>ProteinA</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="Degradation_mRNA_A" reversible="false">
+        <listOfReactants>
+          <speciesReference species="mRNA_A" stoichiometry="1"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/>
+              <ci>k_deg_mRNA</ci>
+              <ci>mRNA_A</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="Degradation_mRNA_B" reversible="false">
+        <listOfReactants>
+          <speciesReference species="mRNA_B" stoichiometry="1"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/>
+              <ci>k_deg_mRNA</ci>
+              <ci>mRNA_B</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="Degradation_ProteinA" reversible="false">
+        <listOfReactants>
+          <speciesReference species="ProteinA" stoichiometry="1"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/>
+              <ci>k_deg_protein</ci>
+              <ci>ProteinA</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="Degradation_ProteinB" reversible="false">
+        <listOfReactants>
+          <speciesReference species="ProteinB" stoichiometry="1"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/>
+              <ci>k_deg_protein</ci>
+              <ci>ProteinB</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+    </listOfReactions>
+
+  </model>
+</sbml>
