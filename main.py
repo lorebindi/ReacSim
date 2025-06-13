@@ -1,5 +1,7 @@
 # This is a sample Python script.
 import os
+import time
+
 from Parser import *
 from Simulation_methods import *
 from Graph_generation import *
@@ -10,9 +12,11 @@ from Graph_generation import *
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    t=time.time()
     current_dir = os.path.dirname(__file__)
-    file_path = os.path.join(current_dir, "Example", "2.xml")
-    model = Parser.read_SBML_file(file_path)
+    file_path = os.path.join(current_dir, "Example", "BioModels/l2v3/GastricSMCellularActivation.xml")
+    model = read_SBML_file(file_path)
     evolution = gillespie_ssa(model, 1)
+    print(time.time() - t)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
