@@ -13,27 +13,31 @@
     </listOfSpecies>
 
     <listOfParameters>
-      <parameter id="k1" value="0.1" constant="true"/>
-      <parameter id="k2" value="0.2" constant="true"/>
+      <parameter id="k1" value="2.5" constant="true"/>
+      <parameter id="k2" value="5.0" constant="true"/>
     </listOfParameters>
 
     <listOfReactions>
 
-      <!-- Reaction 1: A → B -->
+      <!-- Reaction 1: 2A → B -->
       <reaction id="R1" reversible="false">
         <listOfReactants>
-          <speciesReference species="A" stoichiometry="1"/>
+          <speciesReference species="A" stoichiometry="2.0"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="B" stoichiometry="1"/>
+          <speciesReference species="B" stoichiometry="1.0"/>
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
-              <times/>
-              <ci>k1</ci>
+            <times/>
+            <ci>k1</ci>
+            <apply>
+              <power/>
               <ci>A</ci>
+              <cn type="integer">2</cn>
             </apply>
+          </apply>
           </math>
         </kineticLaw>
       </reaction>
@@ -41,18 +45,22 @@
       <!-- Reaction 2: B → C -->
       <reaction id="R2" reversible="false">
         <listOfReactants>
-          <speciesReference species="B" stoichiometry="1"/>
+          <speciesReference species="B" stoichiometry="1.0"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="C" stoichiometry="1"/>
+          <speciesReference species="C" stoichiometry="1.0"/>
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
-              <times/>
-              <ci>k2</ci>
+            <times/>
+            <ci>k2</ci>
+            <apply>
+              <power/>
               <ci>B</ci>
+              <cn type="integer">1</cn>
             </apply>
+          </apply>
           </math>
         </kineticLaw>
       </reaction>

@@ -66,23 +66,49 @@ def contains_identifier(math_ast, target_id):
 
     return traverse(math_ast)
 
-def is_mass_action(formula, reactant_ids):
-    if formula is None:
-        return False
+def is_mass_action_kinetic_law(kinetic_law, reactants):
+    if kinetic_law is None:
+        raise Exception("Unable to determine mass action kinetic law.")
 
-    # Rimuovi spazi
-    formula = formula.replace(" ", "")
+    ast = kinetic_law.getMath() # get the Abstract Syntax Tree (AST) of the kinetic law
 
-    # La formula deve contenere solo una costante e i reagenti (es. "k*A*B")
-    pattern = r'^[\w\.]+(\*[\w\.]+)*$'
-    if not re.fullmatch(pattern, formula):
-        return False
+    if ast is None:
+        raise Exception("AST is None.")
 
-    # Tutti i reagenti devono essere presenti
-    for rid in reactant_ids:
-        if rid not in formula:
-            return False
+    # If the reaction is a synthesis (  -> something) then the kinetic law is equal
+    # to the kinetic constant
+    if ast.getType() == libsbml.AST_NAME:
+        return True
 
+    # Get all child nodes (multiplicands)
+    children = [ast.getChild(i) for i in range(ast.getNumChildren())]
+
+    if ast.getType() != libsbml.AST_TIMES:
+        raise Exception("AST's root is not TIMES(*).")
+
+    # There must be at least one parameter (rate constant)
+    kinetic_constant_found = False
+
+    for child in children:
+        if child.getType() == libsbml.AST_NAME:  # kinetic constant
+            kinetic_constant_found = True
+        elif child.getType() == libsbml.AST_FUNCTION_POWER:
+            base = child.getChild(0)
+            exponent = child.getChild(1)
+            a = libsbml.AST_INTEGER
+            b = exponent.getType()
+            if (
+                    base.getType() != libsbml.AST_NAME or
+                    base.getName() not in reactants or
+                    exponent.getType() != libsbml.AST_INTEGER or
+                    exponent.getValue() != reactants[base.getName()]
+            ):
+                raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
+        else:
+            raise Exception("AST node not expected.")
+
+    if not kinetic_constant_found:
+        raise Exception("Kinetic constant absent.")
     return True
 
 def extract_reactions(model):
@@ -125,8 +151,8 @@ def extract_reactions(model):
         defined only with InitialConcentration, we simply set the compartment 
         value to 1 and use the previously computed InitialAmount values
         '''
-        if not is_mass_action(kinetic_law.getFormula(), reactants_ids):
-            raise Exception("Reaction is not mass action.")
+        is_mass_action_kinetic_law(kinetic_law, reaction[REACTANTS])
+
 
         for compartment in model.getListOfCompartments():
             if contains_identifier(kinetic_law.getMath(), compartment.getId()):
@@ -145,3 +171,12 @@ def extract_reactions(model):
         #TODO: gestione degli eventi.
 
     return reactions
+
+'''def print_ast(node, indent=0):
+    if node is None:
+        return
+
+    print('  ' * indent + f"type: {node.getType()}, name: {node.getName()}, value: {node.getValue()}")
+
+    for i in range(node.getNumChildren()):
+        print_ast(node.getChild(i), indent + 1)'''

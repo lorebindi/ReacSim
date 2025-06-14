@@ -9,8 +9,10 @@ def evaluate_rate(formula, species, parameters):
     local_dict.update(species)
     local_dict.update(parameters)
 
+    safe_globals = {"__builtins__": None, "pow": pow, "math": math}
     try:
-        return eval(formula, {"__builtins__": None, "math": math}, local_dict)
+        val = eval(formula, safe_globals, local_dict)
+        return val
     except:
         return 0.0
 
@@ -67,3 +69,7 @@ def gillespie_ssa (model, t_max):
             evolution[s_id].append(state[s_id])
 
     return evolution
+
+
+#TODO 1. trovare libreria che traduca un sistema di reazioni in un sistema di ODE
+#    2. trovare  la libreria per eseguire il sistema di ODE (es. )

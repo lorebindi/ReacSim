@@ -29,34 +29,31 @@
 
     <listOfReactions>
 
+      <!-- Reaction 1:    → mRNA_A -->
       <reaction id="TranscriptionA" reversible="false">
         <listOfProducts>
           <speciesReference species="mRNA_A" stoichiometry="1"/>
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply><times/>
-              <ci>k_transcription_A</ci>
-              <ci>GeneA</ci>
-            </apply>
+            <ci>k_transcription_A</ci>
           </math>
         </kineticLaw>
       </reaction>
 
+      <!-- Reaction 2:    → mRNA_B -->
       <reaction id="TranscriptionB" reversible="false">
         <listOfProducts>
           <speciesReference species="mRNA_B" stoichiometry="1"/>
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply><times/>
-              <ci>k_transcription_B</ci>
-              <ci>GeneB</ci>
-            </apply>
+            <ci>k_transcription_B</ci>
           </math>
         </kineticLaw>
       </reaction>
 
+      <!-- Reaction 3:   mRNA_A → ProteinA -->
       <reaction id="TranslationA" reversible="false">
         <listOfReactants>
           <speciesReference species="mRNA_A" stoichiometry="1"/>
@@ -66,14 +63,20 @@
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply><times/>
+            <apply>
+              <times/>
               <ci>k_translation_A</ci>
-              <ci>mRNA_A</ci>
+              <apply>
+                <power/>
+                <ci>mRNA_A</ci>
+                <cn type="integer">1</cn>
+              </apply>
             </apply>
           </math>
         </kineticLaw>
       </reaction>
 
+      <!-- Reaction 4:   mRNA_B → ProteinB -->
       <reaction id="TranslationB" reversible="false">
         <listOfReactants>
           <speciesReference species="mRNA_B" stoichiometry="1"/>
@@ -83,14 +86,20 @@
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply><times/>
+            <apply>
+              <times/>
               <ci>k_translation_B</ci>
-              <ci>mRNA_B</ci>
+              <apply>
+                <power/>
+                <ci>mRNA_B</ci>
+                <cn type="integer">1</cn>
+              </apply>
             </apply>
           </math>
         </kineticLaw>
       </reaction>
 
+      <!-- Reaction 5:   ProteinA → ProteinA_nuc -->
       <reaction id="TransportProteinA" reversible="false">
         <listOfReactants>
           <speciesReference species="ProteinA" stoichiometry="1"/>
@@ -102,26 +111,37 @@
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply><times/>
               <ci>k_transport_A</ci>
-              <ci>ProteinA</ci>
+              <apply>
+                <power/>
+                <ci>ProteinA</ci>
+                <cn type="integer">1</cn>
+              </apply>
             </apply>
           </math>
         </kineticLaw>
       </reaction>
 
+      <!-- Reaction 6:   mRNA_A →  -->
       <reaction id="Degradation_mRNA_A" reversible="false">
         <listOfReactants>
           <speciesReference species="mRNA_A" stoichiometry="1"/>
         </listOfReactants>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply><times/>
+            <apply>
+              <times/>
               <ci>k_deg_mRNA</ci>
-              <ci>mRNA_A</ci>
+              <apply>
+                <power/>
+                <ci>mRNA_A</ci>
+                <cn type="integer">1</cn>
+              </apply>
             </apply>
           </math>
         </kineticLaw>
       </reaction>
 
+      <!-- Reaction 7:   mRNA_B →  -->
       <reaction id="Degradation_mRNA_B" reversible="false">
         <listOfReactants>
           <speciesReference species="mRNA_B" stoichiometry="1"/>
@@ -130,35 +150,51 @@
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply><times/>
               <ci>k_deg_mRNA</ci>
-              <ci>mRNA_B</ci>
+              <apply>
+                <power/>
+                <ci>mRNA_B</ci>
+                <cn type="integer">1</cn>
+              </apply>
             </apply>
           </math>
         </kineticLaw>
       </reaction>
 
+      <!-- Reaction 8:   ProteinA →  -->
       <reaction id="Degradation_ProteinA" reversible="false">
         <listOfReactants>
           <speciesReference species="ProteinA" stoichiometry="1"/>
         </listOfReactants>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply><times/>
+            <apply>
+              <times/>
               <ci>k_deg_protein</ci>
-              <ci>ProteinA</ci>
+              <apply>
+                <power/>
+                <ci>ProteinA</ci>
+                <cn type="integer">1</cn>
+              </apply>
             </apply>
           </math>
         </kineticLaw>
       </reaction>
 
+      <!-- Reaction 9:   ProteinB →  -->
       <reaction id="Degradation_ProteinB" reversible="false">
         <listOfReactants>
           <speciesReference species="ProteinB" stoichiometry="1"/>
         </listOfReactants>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply><times/>
+            <apply>
+              <times/>
               <ci>k_deg_protein</ci>
-              <ci>ProteinB</ci>
+              <apply>
+                <power/>
+                <ci>ProteinB</ci>
+                <cn type="integer">1</cn>
+              </apply>
             </apply>
           </math>
         </kineticLaw>
