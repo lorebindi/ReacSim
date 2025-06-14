@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+  <model id="LotkaVolterra">
+
+    <listOfCompartments>
+      <compartment id="cell" size="1" constant="true"/>
+    </listOfCompartments>
+
+    <listOfSpecies>
+      <species id="Prey" compartment="cell" initialAmount="40" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+      <species id="Predator" compartment="cell" initialAmount="9" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
+    </listOfSpecies>
+
+    <listOfParameters>
+      <parameter id="alpha" value="1.1" constant="true"/> <!-- tasso di crescita delle prede -->
+      <parameter id="beta" value="0.4" constant="true"/> <!-- tasso di successo della caccia -->
+      <parameter id="gamma" value="0.4" constant="true"/> <!-- tasso di mortalità naturale della caccia -->
+    </listOfParameters>
+
+    <listOfReactions>
+
+      <!-- Reazione 1:   -> Prey  (crescita della preda) -->
+      <reaction id="PreyGrowth" reversible="false">
+        <listOfProducts>
+          <speciesReference species="Prey" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci>alpha</ci>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <!-- Reazione 2: Prey + Predator -> 2*Predator (predatore consuma la preda e si riproduce) -->
+      <reaction id="Predation" reversible="false">
+        <listOfReactants>
+          <speciesReference species="Prey" stoichiometry="1"/>
+          <speciesReference species="Predator" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Predator" stoichiometry="2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>beta</ci>
+              <apply>
+                <power/>
+                <ci>Prey</ci>
+                <cn type="integer">1</cn>
+              </apply>
+              <apply>
+                <power/>
+                <ci>Predator</ci>
+                <cn type="integer">1</cn>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <!-- Reazione 3: Predator ->   (morte del predatore) -->
+      <reaction id="PredatorDeath" reversible="false">
+        <listOfReactants>
+          <speciesReference species="Predator" stoichiometry="1"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>gamma</ci>
+              <apply>
+                <power/>
+                <ci>Predator</ci>
+                <cn type="integer">1</cn>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+    </listOfReactions>
+
+  </model>
+</sbml>

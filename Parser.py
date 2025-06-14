@@ -66,6 +66,54 @@ def contains_identifier(math_ast, target_id):
 
     return traverse(math_ast)
 
+def print_ast(node, indent=0):
+    if node is None:
+        return
+
+    print('  ' * indent + f"type: {node.getType()}, name: {node.getName()}, value: {node.getValue()}")
+
+    for i in range(node.getNumChildren()):
+        print_ast(node.getChild(i), indent + 1)
+
+
+def validate_mass_action_structure(ast, reactants, kinetic_law, kinetic_constant_found=0):
+    if kinetic_constant_found > 1:
+        raise Exception("Too many kinetic constant.")
+
+    if ast is None:
+        raise Exception("AST is None.")
+
+    # Always * at the root
+    if ast.getType() != libsbml.AST_TIMES:
+        raise Exception("AST's root is not TIMES(*).")
+
+    # Get all child nodes (multiplicands)
+    children = [ast.getChild(i) for i in range(ast.getNumChildren())]
+
+    # There must be at least one parameter (rate constant)
+
+    for child in children:
+        if child.getType() == libsbml.AST_TIMES:
+            kinetic_constant_found = validate_mass_action_structure(child, reactants, kinetic_law, kinetic_constant_found)
+        elif child.getType() == libsbml.AST_NAME:  # kinetic constant
+            kinetic_constant_found += 1
+        elif child.getType() == libsbml.AST_FUNCTION_POWER:
+            base = child.getChild(0)
+            exponent = child.getChild(1)
+            if (
+                    base.getType() != libsbml.AST_NAME or
+                    base.getName() not in reactants or
+                    exponent.getType() != libsbml.AST_INTEGER or
+                    exponent.getValue() != reactants[base.getName()]
+            ):
+                raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
+        else:
+            raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
+                            f"value: {child.getValue()}) in: {kinetic_law.getFormula()}")
+
+    return kinetic_constant_found
+
+
 def is_mass_action_kinetic_law(kinetic_law, reactants):
     if kinetic_law is None:
         raise Exception("Unable to determine mass action kinetic law.")
@@ -80,23 +128,54 @@ def is_mass_action_kinetic_law(kinetic_law, reactants):
     if ast.getType() == libsbml.AST_NAME:
         return True
 
-    # Get all child nodes (multiplicands)
-    children = [ast.getChild(i) for i in range(ast.getNumChildren())]
+    kinetic_constant_found = validate_mass_action_structure(ast, reactants, kinetic_law)
 
+    '''    
+    1 - reactant
+    AST_TIMES
+    ├── AST_NAME("beta")
+    └── AST_POWER
+        ├── AST_NAME("Prey")
+        └── AST_CN(1)
+
+    2 - reactants
+    AST_TIMES
+    ├── AST_TIMES
+    │   ├── AST_NAME("beta")
+    │   └── AST_POWER
+    │       ├── AST_NAME("Prey")
+    │       └── AST_CN(1)
+    └── AST_POWER
+        ├── AST_NAME("Predator")
+        └── AST_CN(1)
+    
+    3 - reactants
+    (times)
+    ├── (times)
+    │    ├── (times)
+    │    │     ├── beta
+    │    │     └── pow(Prey, 1)
+    │    └── pow(Predator, 1)
+    └── pow(SomeOther, 1)
+    
+    ...
+    '''
+
+    '''
     if ast.getType() != libsbml.AST_TIMES:
         raise Exception("AST's root is not TIMES(*).")
 
+    # Get all child nodes (multiplicands)
+    children = [ast.getChild(i) for i in range(ast.getNumChildren())]
+    
     # There must be at least one parameter (rate constant)
-    kinetic_constant_found = False
-
+    kinetic_constant_found = 0
     for child in children:
         if child.getType() == libsbml.AST_NAME:  # kinetic constant
-            kinetic_constant_found = True
+            kinetic_constant_found+=1
         elif child.getType() == libsbml.AST_FUNCTION_POWER:
             base = child.getChild(0)
             exponent = child.getChild(1)
-            a = libsbml.AST_INTEGER
-            b = exponent.getType()
             if (
                     base.getType() != libsbml.AST_NAME or
                     base.getName() not in reactants or
@@ -105,9 +184,10 @@ def is_mass_action_kinetic_law(kinetic_law, reactants):
             ):
                 raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
         else:
-            raise Exception("AST node not expected.")
+            raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
+                            f"value: {child.getValue()}) in: {kinetic_law.getFormula()}")'''
 
-    if not kinetic_constant_found:
+    if kinetic_constant_found == 0:
         raise Exception("Kinetic constant absent.")
     return True
 
@@ -171,12 +251,3 @@ def extract_reactions(model):
         #TODO: gestione degli eventi.
 
     return reactions
-
-'''def print_ast(node, indent=0):
-    if node is None:
-        return
-
-    print('  ' * indent + f"type: {node.getType()}, name: {node.getName()}, value: {node.getValue()}")
-
-    for i in range(node.getNumChildren()):
-        print_ast(node.getChild(i), indent + 1)'''

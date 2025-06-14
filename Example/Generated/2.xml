@@ -8,8 +8,6 @@
     </listOfCompartments>
 
     <listOfSpecies>
-      <species id="GeneA" compartment="nucleus" initialAmount="1000" boundaryCondition="true" constant="false" hasOnlySubstanceUnits="false"/>
-      <species id="GeneB" compartment="nucleus" initialAmount="800" boundaryCondition="true" constant="false" hasOnlySubstanceUnits="false"/>
       <species id="mRNA_A" compartment="nucleus" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
       <species id="mRNA_B" compartment="nucleus" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
       <species id="ProteinA" compartment="cytoplasm" initialAmount="0" boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"/>
