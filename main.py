@@ -11,7 +11,7 @@ if __name__ == '__main__':
     t=time.time()
     current_dir = os.path.dirname(__file__)
     file_path = os.path.join(current_dir, "Example", "Generated/lotka-volterra.xml")
-    model = read_SBML_file(file_path)
+    model = read_sbml_file(file_path)
 
     evolution = gillespie_ssa(model, T_MAX)
 

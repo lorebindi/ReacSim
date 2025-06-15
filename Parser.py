@@ -1,27 +1,26 @@
 from Constants import *
-
 import libsbml
 
-def read_SBML_file(filename):
+def read_sbml_file(filename):
     reader = libsbml.SBMLReader()
-    SBMLdocument = reader.readSBML(filename)
+    sbml_document = reader.readSBML(filename)
 
     # Check the validity of the document
-    if SBMLdocument.getNumErrors() > 0:
-        SBMLdocument.printErrors()
+    if sbml_document.getNumErrors() > 0:
+        sbml_document.printErrors()
         raise Exception("Reading error")
 
     # Make sure the file uses level 3
-    if SBMLdocument.getLevel() != 2:
+    if sbml_document.getLevel() != 2:
         raise Exception("The file isn't level 2.")
 
     # Error checking
     # TODO eventualmente aggiungere nei parametri della funzione il campo "inConversion=True", per abilitare la
     #  conversione se non compatibile
-    if SBMLdocument.checkL2v3Compatibility() > 0 and SBMLdocument.checkL2v4Compatibility() > 0:
+    if sbml_document.checkL2v3Compatibility() > 0 and sbml_document.checkL2v4Compatibility() > 0:
         raise Exception("The file is not compatible with level 2 version 3/4")
 
-    model = SBMLdocument.getModel()
+    model = sbml_document.getModel()
     if model is None:
         raise Exception("Unable to create Model object.")
 
@@ -37,7 +36,7 @@ def extract_species(model):
             volume = compartment.getSize()
             try:
                 species[s.getId()] = volume * s.getInitialConcentration()
-            except TypeError as e: # Example: value * None
+            except TypeError: # Example: value * None
                 raise Exception("Unable to extract InitialAmount from InitialConcentration.")
         else:
             raise Exception("Neither InitialAmount nor InitialConcentration are set.")
@@ -47,6 +46,15 @@ def extract_parameters(model):
     parameters = {p.getId(): p.getValue() for p in model.getListOfParameters()}
     parameters.update({c.getId(): 1.0 for c in model.getListOfCompartments()})
     return parameters
+
+def print_ast(node, indent=0):
+    if node is None:
+        return
+
+    print('  ' * indent + f"type: {node.getType()}, name: {node.getName()}, value: {node.getValue()}")
+
+    for i in range(node.getNumChildren()):
+        print_ast(node.getChild(i), indent + 1)
 
 def contains_identifier(math_ast, target_id):
     if math_ast is None:
@@ -65,67 +73,57 @@ def contains_identifier(math_ast, target_id):
 
     return traverse(math_ast)
 
-def print_ast(node, indent=0):
-    if node is None:
-        return
-
-    print('  ' * indent + f"type: {node.getType()}, name: {node.getName()}, value: {node.getValue()}")
-
-    for i in range(node.getNumChildren()):
-        print_ast(node.getChild(i), indent + 1)
-
-# TODO: mettere reactants e kinetic_law come variabili globali?
-def validate_mass_action_structure(ast, reactants, kinetic_law, kinetic_constant_found=0):
-
-    if ast is None:
-        raise Exception("AST is None.")
-
-    # Always * at the root
-    if ast.getType() != libsbml.AST_TIMES:
-        raise Exception("AST's root is not TIMES(*).")
-
-    # Get all child nodes (multiplicands)
-    children = [ast.getChild(i) for i in range(ast.getNumChildren())]
-
-    for child in children:
-        if child.getType() == libsbml.AST_TIMES:
-            kinetic_constant_found = validate_mass_action_structure(child, reactants, kinetic_law, kinetic_constant_found)
-            # There must be at least one parameter (rate constant)
-            if kinetic_constant_found > 1:
-                raise Exception("Too many kinetic constant.")
-        elif child.getType() == libsbml.AST_NAME:  # kinetic constant
-            kinetic_constant_found += 1
-        elif child.getType() == libsbml.AST_FUNCTION_POWER:
-            base = child.getChild(0)
-            exponent = child.getChild(1)
-            if (
-                    base.getType() != libsbml.AST_NAME or
-                    base.getName() not in reactants or
-                    exponent.getType() != libsbml.AST_INTEGER or
-                    exponent.getValue() != reactants[base.getName()]
-            ):
-                raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
-        else:
-            raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
-                            f"value: {child.getValue()}) in: {kinetic_law.getFormula()}")
-
-    return kinetic_constant_found
-
-def is_mass_action_kinetic_law(kinetic_law, reactants):
+def is_mass_action_kinetic_law(reactants):
     if kinetic_law is None:
         raise Exception("Unable to determine mass action kinetic law.")
 
-    ast = kinetic_law.getMath() # get the Abstract Syntax Tree (AST) of the kinetic law
+    ast_root = kinetic_law.getMath() # get the Abstract Syntax Tree (AST) of the kinetic law
 
-    if ast is None:
+    if ast_root is None:
         raise Exception("AST is None.")
 
     # If the reaction is a synthesis (  -> something) then the kinetic law is equal
     # to the kinetic constant
-    if ast.getType() == libsbml.AST_NAME:
+    if ast_root.getType() == libsbml.AST_NAME:
         return True
 
-    if validate_mass_action_structure(ast, reactants, kinetic_law) == 0:
+    def validate_mass_action_structure(ast, kinetic_constant_found=0):
+        if kinetic_law is None:
+            raise Exception("Kinetic law not set.")
+
+        if ast is None:
+            raise Exception("AST is None.")
+
+        # Always * at the root
+        if ast.getType() != libsbml.AST_TIMES:
+            raise Exception("AST's root is not TIMES(*).")
+
+        #  all child nodes (multiplicands)
+        for child in [ast.getChild(i) for i in range(ast.getNumChildren())]:
+            if child.getType() == libsbml.AST_TIMES:
+                kinetic_constant_found = validate_mass_action_structure(child, kinetic_constant_found)
+                # There must be at least one parameter (rate constant)
+                if kinetic_constant_found > 1:
+                    raise Exception("Too many kinetic constant.")
+            elif child.getType() == libsbml.AST_NAME:  # kinetic constant
+                kinetic_constant_found += 1
+            elif child.getType() == libsbml.AST_FUNCTION_POWER:
+                base = child.getChild(0)
+                exponent = child.getChild(1)
+                if (
+                        base.getType() != libsbml.AST_NAME or
+                        base.getName() not in reactants or
+                        exponent.getType() != libsbml.AST_INTEGER or
+                        exponent.getValue() != reactants[base.getName()]
+                ):
+                    raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
+            else:
+                raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
+                                f"value: {child.getValue()}) in: {kinetic_law.getFormula()}")
+
+        return kinetic_constant_found
+
+    if validate_mass_action_structure(ast_root) == 0:
         raise Exception("Kinetic constant absent.")
     return True
 
@@ -160,33 +158,8 @@ def is_mass_action_kinetic_law(kinetic_law, reactants):
     ...
     '''
 
-'''
-if ast.getType() != libsbml.AST_TIMES:
-    raise Exception("AST's root is not TIMES(*).")
-
-# Get all child nodes (multiplicands)
-children = [ast.getChild(i) for i in range(ast.getNumChildren())]
-
-# There must be at least one parameter (rate constant)
-kinetic_constant_found = 0
-for child in children:
-    if child.getType() == libsbml.AST_NAME:  # kinetic constant
-        kinetic_constant_found+=1
-    elif child.getType() == libsbml.AST_FUNCTION_POWER:
-        base = child.getChild(0)
-        exponent = child.getChild(1)
-        if (
-                base.getType() != libsbml.AST_NAME or
-                base.getName() not in reactants or
-                exponent.getType() != libsbml.AST_INTEGER or
-                exponent.getValue() != reactants[base.getName()]
-        ):
-            raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
-    else:
-        raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
-                        f"value: {child.getValue()}) in: {kinetic_law.getFormula()}")'''
-
 def extract_reactions(model):
+    global kinetic_law
     reactions = []
 
     for r in model.getListOfReactions():
@@ -226,18 +199,20 @@ def extract_reactions(model):
         defined only with InitialConcentration, we simply set the compartment 
         value to 1 and use the previously computed InitialAmount values
         '''
-        is_mass_action_kinetic_law(kinetic_law, reaction[REACTANTS])
+
+        #TODO: proviamo a non scorrere l'albero più volte ma una volta sola? Unendo:
+        # - is_mass_action_kinetic_law
+        # - contains_identifier
+        is_mass_action_kinetic_law(reaction[REACTANTS])
 
         for compartment in model.getListOfCompartments():
             if contains_identifier(kinetic_law.getMath(), compartment.getId()):
                 raise Exception("Kinetic law invalid for us.")
 
-        formula = kinetic_law.getFormula()
+        reaction[RATE] = kinetic_law.getFormula()
 
-        reaction[RATE] = formula
-
-        #TODO: inferimento della legge cinetica da dati forniti tramite file csv.
-        # 1. Come diciamo quale reazione deve passare da l'inferimento?
+        #TODO: inferenza della legge cinetica da dati forniti tramite file csv.
+        # 1. Come diciamo quale reazione deve passare da l'inferenza?
         # 2. Generazione punti dati da cui inferire?
 
         reactions.append(reaction)
