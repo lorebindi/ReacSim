@@ -250,14 +250,35 @@ def extract_events(model):
                 raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
                                 f"value: {child.getValue()}) in: {ast.getFormula()}")
 
-    def validate_event_assigment(ea):
+    def validate_event_assigment(ast):
+        if ast is None:
+            raise Exception("AST is None.")
 
+        if ast.getType() == libsbml.AST_NAME:
+            string_of_element = ast.getName()
+            element = model.getElementBySId(string_of_element)
+
+            if element is None:
+                raise Exception(f"Symbol '{string_of_element}' not found in model.")
+
+            # Cerca la UnitDefinition della variabile AST_NAME
+
+            if not (element.isSpecies() or element.isParameter() or element.isCompartment()):
+                raise Exception(f"Unsupported element type for symbol '{string_of_element}'")
+
+            # Controlla se le unità sono diverse
+            if not libsbml.UnitDefinition.areEquivalent(model.getUnitDefinition(element.getUnits()),
+                                                        unit_definition_variable):
+                raise Exception(f"Unit mismatch: '{string_of_element}' has units different from assigned variable.")
+        else:
+            for i in range(ast.getNumChildren()):
+                validate_event_assigment(ast.getChild(i))
 
     events = []
     for e in model.getListOfEvents():
         event = {
             TRIGGER: {},
-            LIST_OF_EVENT_ASSIGMENT: {},
+            LIST_OF_EVENT_ASSIGMENT: [],
             DELAY: None,
             PRIORITY: None
         }
@@ -269,13 +290,20 @@ def extract_events(model):
         validate_trigger_boolean_expr(trigger.getMath())
         event[TRIGGER] = trigger.getFormula()
 
-        for event_assigment in e.getListOfEventAssignments():
+        for event_assignment in e.getListOfEventAssignments():
+            string_of_variable = event_assignment.getVariable()
+            variable = model.getElementBySId(string_of_variable)
+            if variable is None:
+                raise Exception(f"Variable '{string_of_variable}' not found in model.")
 
-            unit_definition_variable = model.getUnitDefinition(event_assigment.getVariable()) #
+            unit_definition_variable = model.getUnitDefinition(variable)
+            validate_event_assigment(event_assignment.getMath())
 
-            validate_event_assigment(event_assigment)
+            event[LIST_OF_EVENT_ASSIGMENT].append(event_assignment)
 
+        # TODO: aggiungere delay e priority
 
+        events.append(event)
 
         '''
         1. le unità di misura.
@@ -285,7 +313,4 @@ def extract_events(model):
             b. somme, differenze, moltiplicazioni
         3. il blocco math restituisca un valore con la solità unità di misura di variable
         '''
-
-
-
-    return
+    return events
