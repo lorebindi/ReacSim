@@ -375,3 +375,8 @@ def validate_mass_action_structure(ast, reactants, kinetic_law, kinetic_constant
     for compartment in model.getListOfCompartments():
         if contains_identifier(kinetic_law.getMath(), compartment.getId()):
             raise Exception("Kinetic law invalid for us.")
+
+
+
+
+

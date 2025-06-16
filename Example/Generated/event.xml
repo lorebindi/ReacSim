@@ -1,0 +1,60 @@
+<!--
+ - Ogni evento ha sempre un solo trigger. Ogni tag event DEVE specificare al suo interno i tag Trigger e listOfEventAssigment (NON vuota),
+    ed eventualmente delay.
+
+ - Il tag trigger presenta sempre e solo un sotto elemento math
+
+ - Il tag math del trigger deve essere sempre un espressione booleana (=,>,<, ...).
+   Il trigger scatta quando la condizione fa false->true, in tutti gli altri casi (true->true, true->false, false->false) il trigger non è attivo.
+
+ - Un evento si attiva solo quando il trigger passa da falso a vero; può attivarsi più volte se questa transizione si ripete nel tempo.
+
+ - Se l'attributo booleano “persistent” ha valore True, una volta che l'evento è stato attivato,
+   tutte le sue assegnazioni vengono sempre eseguite quando viene raggiunto il tempo di esecuzione.
+   Questo è utile anche senza delay: se più eventi si attivano simultaneamente e non hanno priorità definite,
+   SBML non impone un ordine di esecuzione. In questi casi, l’esecuzione di un evento può influenzare il valore
+   della condizione (trigger) di un altro. Se questo secondo evento ha persistent="false" e la sua condizione
+   diventa falsa prima dell'esecuzione, allora non deve essere eseguito.
+
+ - initialValue serve solo a determinare se al tempo t = 0 il trigger può transizionare da false a true.
+   Non influenza direttamente il valore della condizione, ma imposta lo stato precedente rispetto all’inizio della simulazione.
+
+ - Ogni EventAssigment deve specificare l'attributo variable che può essere un Compartment, Species, SpeciesReference, Parameter
+   precedentemente definiti nel modello. Quando l’evento viene eseguito, il valore del componente del modello indicato da
+   ‘variable’ viene aggiornato al valore calcolato dall’elemento ‘math’. In pratica, la quantità di una specie, la stechiometria
+   di un riferimento di specie, la dimensione di un compartimento o il valore di un parametro vengono modificati in base al calcolo
+   definito nell’evento. Variable non può essere: una costante, l'id di una reazione. Variable deve essere univoco per ciascun
+   EventAssigment all'interno della medesima ListOfEventAssigment
+
+ -->
+
+<listOfEvents>
+      <event id="Simulation_end" metaid="COPASI10" name="Simulation_end" useValuesFromTriggerTime="true">
+          <trigger persistent="false" initialValue="false">
+              <math xmlns="http://www.w3.org/1998/Math/MathML">
+                <apply>
+                  <eq/>
+                  <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+                  <cn> 199 </cn>
+                </apply>
+              </math>
+          </trigger>
+          <delay>
+              <math xmlns="http://www.w3.org/1998/Math/MathML">
+                <cn> 0 </cn>
+              </math>
+          </delay>
+          <listOfEventAssignments>
+              <eventAssignment variable="Epidemic_size">
+                <math xmlns="http://www.w3.org/1998/Math/MathML">
+                  <ci> Recovered </ci>
+                </math>
+              </eventAssignment>
+              <eventAssignment variable="Uninfected">
+                <math xmlns="http://www.w3.org/1998/Math/MathML">
+                  <ci> Susceptible </ci>
+                </math>
+              </eventAssignment>
+          </listOfEventAssignments>
+      </event>
+</listOfEvents>
