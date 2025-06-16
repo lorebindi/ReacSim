@@ -56,81 +56,6 @@ def print_ast(node, indent=0):
     for i in range(node.getNumChildren()):
         print_ast(node.getChild(i), indent + 1)
 
-def contains_identifier(math_ast, target_id):
-    if math_ast is None:
-        return False
-
-    # Recursively search for a node with name target_id
-    def traverse(node):
-        if node is None:
-            return False
-        if node.getType() == libsbml.AST_NAME:
-            return node.getName() == target_id
-        for i in range(node.getNumChildren()):
-            if traverse(node.getChild(i)):
-                return True
-        return False
-
-    return traverse(math_ast)
-
-def is_mass_action_kinetic_law(reactants):
-    if kinetic_law is None:
-        raise Exception("Unable to determine mass action kinetic law.")
-
-    ast_root = kinetic_law.getMath() # get the Abstract Syntax Tree (AST) of the kinetic law
-
-    if ast_root is None:
-        raise Exception("AST is None.")
-
-    # If the reaction is a synthesis (  -> something) then the kinetic law is equal
-    # to the kinetic constant
-    if ast_root.getType() == libsbml.AST_NAME:
-        return True
-
-    def validate_mass_action_structure(ast, kinetic_constant_found=0):
-        if kinetic_law is None:
-            raise Exception("Kinetic law not set.")
-
-        if ast is None:
-            raise Exception("AST is None.")
-
-        # Always * at the root
-        if ast.getType() != libsbml.AST_TIMES:
-            raise Exception("AST's root is not TIMES(*).")
-
-        #  all child nodes (multiplicands)
-        for child in [ast.getChild(i) for i in range(ast.getNumChildren())]:
-            if child.getType() == libsbml.AST_TIMES:
-                kinetic_constant_found = validate_mass_action_structure(child, kinetic_constant_found)
-                # There must be at least one parameter (rate constant)
-                if kinetic_constant_found > 1:
-                    raise Exception("Too many kinetic constant.")
-            elif child.getType() == libsbml.AST_NAME:  # kinetic constant
-                kinetic_constant_found += 1
-            elif child.getType() == libsbml.AST_FUNCTION_POWER:
-                base = child.getChild(0)
-                exponent = child.getChild(1)
-                if (
-                        base.getType() != libsbml.AST_NAME or
-                        base.getName() not in reactants or(
-                        exponent.getType() != libsbml.AST_INTEGER and
-                        exponent.getType() != libsbml.AST_REAL and
-                        exponent.getType() != libsbml.AST_REAL_E and
-                        exponent.getType() != libsbml.AST_RATIONAL
-                        ) or
-                        exponent.getValue() != reactants[base.getName()]
-                ):
-                    raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
-            else:
-                raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
-                                f"value: {child.getValue()}) in: {kinetic_law.getFormula()}")
-
-        return kinetic_constant_found
-
-    if validate_mass_action_structure(ast_root) == 0:
-        raise Exception("Kinetic constant absent.")
-    return True
-
 '''    
     1 - reactant
     AST_TIMES
@@ -163,7 +88,76 @@ def is_mass_action_kinetic_law(reactants):
     '''
 
 def extract_reactions(model):
-    global kinetic_law
+    def validate_mass_action_kinetic_law(reactants):
+        def validate_mass_action_structure(ast, kinetic_constant_found=0):
+            if kinetic_law is None:
+                raise Exception("Kinetic law not set.")
+
+            if ast is None:
+                raise Exception("AST is None.")
+
+            # Always * at the root
+            if ast.getType() != libsbml.AST_TIMES:
+                raise Exception("AST's root is not TIMES(*).")
+
+            #  all child nodes (multiplicands)
+            for child in [ast.getChild(i) for i in range(ast.getNumChildren())]:
+                if child.getType() == libsbml.AST_TIMES:
+                    kinetic_constant_found = validate_mass_action_structure(child, kinetic_constant_found)
+                    # There must be at least one parameter (rate constant)
+                    if kinetic_constant_found > 1:
+                        raise Exception("Too many kinetic constant.")
+                elif child.getType() == libsbml.AST_NAME:  # kinetic constant
+                    kinetic_constant_found += 1
+                elif child.getType() == libsbml.AST_FUNCTION_POWER:
+                    base = child.getChild(0)
+                    exponent = child.getChild(1)
+                    if (
+                            base.getType() != libsbml.AST_NAME or
+                            base.getName() not in reactants or
+                            exponent.getType() not in TYPE_NUMBER or
+                            exponent.getValue() != reactants[base.getName()]
+                    ):
+                        raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
+                else:
+                    raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
+                                    f"value: {child.getValue()}) in: {kinetic_law.getFormula()}")
+
+            return kinetic_constant_found
+
+        if kinetic_law is None:
+            raise Exception("Unable to determine mass action kinetic law.")
+
+        ast_root = kinetic_law.getMath()  # get the Abstract Syntax Tree (AST) of the kinetic law
+
+        if ast_root is None:
+            raise Exception("AST is None.")
+
+        # If the reaction is a synthesis (  -> something) then the kinetic law is equal
+        # to the kinetic constant
+        if ast_root.getType() == libsbml.AST_NAME:
+            return
+
+        if validate_mass_action_structure(ast_root) == 0:
+            raise Exception("Kinetic constant absent.")
+
+    def contains_identifier(math_ast, target_id):
+        if math_ast is None:
+            return False
+
+        # Recursively search for a node with name target_id
+        def traverse(node):
+            if node is None:
+                return False
+            if node.getType() == libsbml.AST_NAME:
+                return node.getName() == target_id
+            for i in range(node.getNumChildren()):
+                if traverse(node.getChild(i)):
+                    return True
+            return False
+
+        return traverse(math_ast)
+
     reactions = []
 
     for r in model.getListOfReactions():
@@ -205,9 +199,9 @@ def extract_reactions(model):
         '''
 
         #TODO: proviamo a non scorrere l'albero più volte ma una volta sola? Unendo:
-        # - is_mass_action_kinetic_law
+        # - validate_mass_action_kinetic_law
         # - contains_identifier
-        is_mass_action_kinetic_law(reaction[REACTANTS])
+        validate_mass_action_kinetic_law(reaction[REACTANTS])
 
         for compartment in model.getListOfCompartments():
             if contains_identifier(kinetic_law.getMath(), compartment.getId()):
@@ -226,3 +220,72 @@ def extract_reactions(model):
     if len(reactions) == 0: raise Exception("No reactions found.")
 
     return reactions
+
+def extract_events(model):
+    def is_valid_identifier(name):
+        return (
+                model.getSpecies(name) is not None or
+                model.getParameter(name) is not None or
+                model.getCompartment(name) is not None or
+                model.getSpeciesReference(name) is not None
+        )
+
+    def validate_trigger_boolean_expr(ast):
+        if ast is None:
+            raise Exception("AST is None.")
+
+        if ast.getType() not in TYPE_TRIGGER:
+            raise Exception("AST must be logical or relational operator.")
+
+        for child in [ast.getChild(i) for i in range(ast.getNumChildren())]:
+            if child.getType() in TYPE_TRIGGER:
+                validate_trigger_boolean_expr(ast)
+            elif child.getType() == libsbml.AST_NAME:
+                if not is_valid_identifier(child.getName()):
+                    raise Exception("Invalid identifier.")
+                return
+            elif child.getType() in TYPE_NUMBER:
+                return
+            else:
+                raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
+                                f"value: {child.getValue()}) in: {ast.getFormula()}")
+
+    def validate_event_assigment(ea):
+
+
+    events = []
+    for e in model.getListOfEvents():
+        event = {
+            TRIGGER: {},
+            LIST_OF_EVENT_ASSIGMENT: {},
+            DELAY: None,
+            PRIORITY: None
+        }
+
+        trigger = e.getTrigger()
+        if trigger is None:
+            raise Exception("Trigger not found.")
+        # Check if trigger condition is valid
+        validate_trigger_boolean_expr(trigger.getMath())
+        event[TRIGGER] = trigger.getFormula()
+
+        for event_assigment in e.getListOfEventAssignments():
+
+            unit_definition_variable = model.getUnitDefinition(event_assigment.getVariable()) #
+
+            validate_event_assigment(event_assigment)
+
+
+
+        '''
+        1. le unità di misura.
+        2. variable contiene riferimenti a un Compartment, Species, SpeciesReference, Parameter
+            Permettiamo: 
+            a. costanti (<cn>) singole, variabili (species, ..., compartment) (<ci>) singole.
+            b. somme, differenze, moltiplicazioni
+        3. il blocco math restituisca un valore con la solità unità di misura di variable
+        '''
+
+
+
+    return

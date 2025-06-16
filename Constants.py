@@ -1,6 +1,26 @@
+import libsbml
 
 TIME = '_time_'
+# reaction
 ID = "id"
 REACTANTS = "reactants"
 PRODUCTS = "products"
 RATE = "rate"
+
+TYPE_NUMBER = (libsbml.AST_INTEGER, libsbml.AST_REAL,
+               libsbml.AST_REAL_E, libsbml.AST_RATIONAL)
+
+# event
+TRIGGER = "trigger"
+LIST_OF_EVENT_ASSIGMENT = "list_of_event_assigment_list"
+DELAY = "delay"
+PRIORITY = "priority"
+
+TYPE_TRIGGER_LOGICAL = (libsbml.AST_LOGICAL_AND, libsbml.AST_LOGICAL_OR,
+              libsbml.AST_LOGICAL_NOT, libsbml.AST_LOGICAL_XOR)
+
+TYPE_TRIGGER_RELATIONAL = (libsbml.AST_RELATIONAL_EQ, libsbml.AST_RELATIONAL_GEQ,
+              libsbml.AST_RELATIONAL_GT, libsbml.AST_RELATIONAL_LEQ,
+              libsbml.AST_RELATIONAL_LT,libsbml.AST_RELATIONAL_NEQ)
+
+TYPE_TRIGGER = TYPE_TRIGGER_LOGICAL + TYPE_TRIGGER_RELATIONAL
