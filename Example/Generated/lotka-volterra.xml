@@ -35,7 +35,7 @@
       <reaction id="Predation" reversible="false">
         <listOfReactants>
           <speciesReference species="Prey" stoichiometry="1"/>
-          <speciesReference species="Predator" stoichiometry="1"/>
+          <speciesReference species="Predator" stoichiometry="1.1e3"/>
         </listOfReactants>
         <listOfProducts>
           <speciesReference species="Predator" stoichiometry="2"/>
@@ -53,7 +53,7 @@
               <apply>
                 <power/>
                 <ci>Predator</ci>
-                <cn type="integer">1</cn>
+                <cn type="e-notation">1.1e3</cn>
               </apply>
             </apply>
           </math>

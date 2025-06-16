@@ -112,8 +112,12 @@ def is_mass_action_kinetic_law(reactants):
                 exponent = child.getChild(1)
                 if (
                         base.getType() != libsbml.AST_NAME or
-                        base.getName() not in reactants or
-                        exponent.getType() != libsbml.AST_INTEGER or
+                        base.getName() not in reactants or(
+                        exponent.getType() != libsbml.AST_INTEGER and
+                        exponent.getType() != libsbml.AST_REAL and
+                        exponent.getType() != libsbml.AST_REAL_E and
+                        exponent.getType() != libsbml.AST_RATIONAL
+                        ) or
                         exponent.getValue() != reactants[base.getName()]
                 ):
                     raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
@@ -218,5 +222,7 @@ def extract_reactions(model):
         reactions.append(reaction)
 
         #TODO: gestione degli eventi.
+
+    if len(reactions) == 0: raise Exception("No reactions found.")
 
     return reactions

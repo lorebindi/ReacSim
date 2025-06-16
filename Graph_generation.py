@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 def plot(evolution, t_max, save_dir=None):
     if evolution is None: raise Exception("Evolution is None")
     if TIME not in evolution: raise Exception("Evolution does not contain time")
+    if TIME in evolution.keys() and len(evolution) == 1: raise Exception("Evolution does not contain data.")
 
     time_values = evolution[TIME]
     specie_names = [k for k in evolution if k != TIME]
