@@ -380,3 +380,21 @@ def validate_mass_action_structure(ast, reactants, kinetic_law, kinetic_constant
 
 
 
+def evaluate_rate(expr_rate):
+        # Merge state and parameters in a single dictionary for expression evaluation
+        local_scope = {**state, **parameters}
+
+        safe_globals = {"__builtins__": None, "pow": pow, "math": math}
+        try:
+            return eval(expr_rate, safe_globals, local_scope)
+        except:
+            raise Exception("Kinetic Law evaluation failed.")
+
+    def eval_trigger(expr_trigger):
+        # Merge state and parameters in a single dictionary for expression evaluation
+        local_scope = {**state, **parameters}
+
+        try:
+            return eval(expr_trigger, {}, local_scope)
+        except:
+            raise Exception("Trigger evaluation failed.")

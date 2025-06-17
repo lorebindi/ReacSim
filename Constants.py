@@ -1,4 +1,6 @@
 import libsbml
+import math
+import operator
 
 TIME = '_time_'
 # reaction
@@ -12,6 +14,7 @@ TYPE_NUMBER = (libsbml.AST_INTEGER, libsbml.AST_REAL,
 
 # event
 TRIGGER = "trigger"
+PREVIOUS = "previous"
 LIST_OF_EVENT_ASSIGMENT = "list_of_event_assigment_list"
 DELAY = "delay"
 PRIORITY = "priority"
@@ -24,3 +27,27 @@ TYPE_TRIGGER_RELATIONAL = (libsbml.AST_RELATIONAL_EQ, libsbml.AST_RELATIONAL_GEQ
               libsbml.AST_RELATIONAL_LT,libsbml.AST_RELATIONAL_NEQ)
 
 TYPE_TRIGGER = TYPE_TRIGGER_LOGICAL + TYPE_TRIGGER_RELATIONAL
+
+TYPE_CODE = (libsbml.SBML_PARAMETER, libsbml.SBML_SPECIES, libsbml.SBML_COMPARTMENT)
+
+TYPE_OP = (libsbml.AST_PLUS, libsbml.AST_MINUS)
+
+ERROR_KINETIC_LAW = "Kinetic Law"
+ERROR_TRIGGER = "Trigger"
+ERROR_EVENT_ASSIGNMENTS = "Event assignment"
+SAFE_GLOBALS_BASE = {"__builtins__": None, "math": math}
+SAFE_GLOBALS_RATE = {**SAFE_GLOBALS_BASE,
+                     "pow": pow}
+SAFE_GLOBALS_TRIGGER = {**SAFE_GLOBALS_BASE,
+                        # Relational
+                        "eq": operator.eq,
+                        "geq": operator.ge,
+                        "gt": operator.gt,
+                        "leq": operator.le,
+                        "lt": operator.lt,
+                        "neq": operator.ne,
+                        # Logical
+                        "and": lambda a, b: a and b,
+                        "or": lambda a, b: a or b,
+                        "not": lambda a: not a,
+                        "xor": operator.xor}

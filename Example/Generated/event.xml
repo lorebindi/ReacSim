@@ -9,13 +9,16 @@
 
  - Un evento si attiva solo quando il trigger passa da falso a vero; può attivarsi più volte se questa transizione si ripete nel tempo.
 
- - Se l'attributo booleano “persistent” ha valore True, una volta che l'evento è stato attivato,
+ - (SOLO LIVELLO 3) Se l'attributo booleano “persistent” ha valore True, una volta che l'evento è stato attivato,
    tutte le sue assegnazioni vengono sempre eseguite quando viene raggiunto il tempo di esecuzione,
    anche se la condizione del trigger è passata true->false.
    Questo è utile anche senza delay: se più eventi si attivano simultaneamente e non hanno priorità definite,
    SBML non impone un ordine di esecuzione. In questi casi, l’esecuzione di un evento può influenzare il valore
    della condizione (trigger) di un altro. Se questo secondo evento ha persistent="false" e la sua condizione
    diventa falsa prima dell'esecuzione, allora non deve essere eseguito.
+
+   t(trigger)           t(eventAssigment)
+
 
  - initialValue serve solo a determinare se al tempo t = 0 il trigger può transizionare da false a true.
    Non influenza direttamente il valore della condizione, ma imposta lo stato precedente rispetto all’inizio della simulazione.

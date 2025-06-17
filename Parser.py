@@ -250,27 +250,38 @@ def extract_events(model):
                 raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
                                 f"value: {child.getValue()}) in: {ast.getFormula()}")
 
+    '''
+    Supported operations:
+    1. PLUS and MINUS between variables and costants.
+    2. PLUS and MINUS between variables. 
+    '''
+    # TODO: estendere alle altre operazioni
     def validate_event_assigment(ast):
         if ast is None:
             raise Exception("AST is None.")
-
-        if ast.getType() == libsbml.AST_NAME:
+        if ast.getType() in TYPE_NUMBER: # variable = constant
+            return
+        elif ast.getType() == libsbml.AST_NAME:
             string_of_element = ast.getName()
             element = model.getElementBySId(string_of_element)
 
             if element is None:
                 raise Exception(f"Symbol '{string_of_element}' not found in model.")
 
-            # Cerca la UnitDefinition della variabile AST_NAME
-
-            if not (element.isSpecies() or element.isParameter() or element.isCompartment()):
+            if element.getTypeCode() not in TYPE_CODE: # element != (Species, Parameter, Compartment))
                 raise Exception(f"Unsupported element type for symbol '{string_of_element}'")
 
-            # Controlla se le unità sono diverse
+            if not element.isSetUnits():
+                raise Exception(f"Unsupported element type for symbol '{string_of_element}'")
+
+            # Check if the units are different
             if not libsbml.UnitDefinition.areEquivalent(model.getUnitDefinition(element.getUnits()),
                                                         unit_definition_variable):
                 raise Exception(f"Unit mismatch: '{string_of_element}' has units different from assigned variable.")
         else:
+            if ast.getType() not in TYPE_OP:
+                raise Exception("Only AST_PLUS and AST_MINUS are supported in the EventAssigment.")
+
             for i in range(ast.getNumChildren()):
                 validate_event_assigment(ast.getChild(i))
 
@@ -278,6 +289,7 @@ def extract_events(model):
     for e in model.getListOfEvents():
         event = {
             TRIGGER: {},
+            PREVIOUS: False,
             LIST_OF_EVENT_ASSIGMENT: [],
             DELAY: None,
             PRIORITY: None
@@ -287,8 +299,9 @@ def extract_events(model):
         if trigger is None:
             raise Exception("Trigger not found.")
         # Check if trigger condition is valid
-        validate_trigger_boolean_expr(trigger.getMath())
-        event[TRIGGER] = trigger.getFormula()
+        ast_trigger = trigger.getMath()
+        validate_trigger_boolean_expr(ast_trigger)
+        event[TRIGGER] = libsbml.formulaToString(ast_trigger)
 
         for event_assignment in e.getListOfEventAssignments():
             string_of_variable = event_assignment.getVariable()
@@ -296,7 +309,12 @@ def extract_events(model):
             if variable is None:
                 raise Exception(f"Variable '{string_of_variable}' not found in model.")
 
-            unit_definition_variable = model.getUnitDefinition(variable)
+            # Ottieni l'attributo 'units' dalla variabile (solo se esiste)
+            unit_id = variable.getUnits() if variable.isSetUnits() else None
+            if unit_id is None:
+                raise Exception("Undefined unit definition for variable.")
+            unit_definition_variable = model.getUnitDefinition(unit_id)
+
             validate_event_assigment(event_assignment.getMath())
 
             event[LIST_OF_EVENT_ASSIGMENT].append(event_assignment)
