@@ -56,37 +56,6 @@ def print_ast(node, indent=0):
     for i in range(node.getNumChildren()):
         print_ast(node.getChild(i), indent + 1)
 
-'''    
-    1 - reactant
-    AST_TIMES
-    ├── AST_NAME("beta")
-    └── AST_POWER
-        ├── AST_NAME("Prey")
-        └── AST_CN(1)
-
-    2 - reactants
-    AST_TIMES
-    ├── AST_TIMES
-    │   ├── AST_NAME("beta")
-    │   └── AST_POWER
-    │       ├── AST_NAME("Prey")
-    │       └── AST_CN(1)
-    └── AST_POWER
-        ├── AST_NAME("Predator")
-        └── AST_CN(1)
-
-    3 - reactants
-    (times)
-    ├── (times)
-    │    ├── (times)
-    │    │     ├── beta
-    │    │     └── pow(Prey, 1)
-    │    └── pow(Predator, 1)
-    └── pow(SomeOther, 1)
-
-    ...
-    '''
-
 def extract_reactions(model):
     def validate_mass_action_kinetic_law(reactants):
         def validate_mass_action_structure(ast, kinetic_constant_found=0):
@@ -171,7 +140,7 @@ def extract_reactions(model):
         # Reactans' coefficients
         reactants_ids = []
         for sr in r.getListOfReactants():
-            reactants_ids.append(sr.getId()) #usefull to check if the kinectik law is mass action law
+            reactants_ids.append(sr.getId()) #usefull to check if the kinetic law is mass action law
             reaction[REACTANTS][sr.getSpecies()] = sr.getStoichiometry()
 
         # Products' coefficients
@@ -239,12 +208,12 @@ def extract_events(model):
 
         for child in [ast.getChild(i) for i in range(ast.getNumChildren())]:
             if child.getType() in TYPE_TRIGGER:
-                validate_trigger_boolean_expr(ast)
+                validate_trigger_boolean_expr(child)
             elif child.getType() == libsbml.AST_NAME:
                 if not is_valid_identifier(child.getName()):
                     raise Exception("Invalid identifier.")
                 return
-            elif child.getType() in TYPE_NUMBER:
+            elif child.getType() in TYPE_NUMBER or child.getType() == libsbml.AST_NAME_TIME:
                 return
             else:
                 raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
@@ -252,10 +221,11 @@ def extract_events(model):
 
     '''
     Supported operations:
-    1. PLUS and MINUS between variables and costants.
-    2. PLUS and MINUS between variables. 
+    1. PLUS and MINUS between variables and constans. 
+    2. Logical comparisons and conditions using variables, constants, and operators (LT, GT, EQ, AND, OR, NOT).
+    3. Use of <csymbol> time to refer to the current simulation time.
     '''
-    # TODO: estendere alle altre operazioni
+    # TODO: estendere alle altre operazioni (TIMES, DIV) e math functions
     def validate_event_assigment(ast):
         if ast is None:
             raise Exception("AST is None.")
@@ -264,7 +234,6 @@ def extract_events(model):
         elif ast.getType() == libsbml.AST_NAME:
             string_of_element = ast.getName()
             element = model.getElementBySId(string_of_element)
-
             if element is None:
                 raise Exception(f"Symbol '{string_of_element}' not found in model.")
 
@@ -289,7 +258,7 @@ def extract_events(model):
     for e in model.getListOfEvents():
         event = {
             TRIGGER: {},
-            PREVIOUS: False,
+            PREVIOUS: False,    # Value of trigger at t-tau (previous value)
             LIST_OF_EVENT_ASSIGMENT: [],
             DELAY: None,
             PRIORITY: None
@@ -301,7 +270,8 @@ def extract_events(model):
         # Check if trigger condition is valid
         ast_trigger = trigger.getMath()
         validate_trigger_boolean_expr(ast_trigger)
-        event[TRIGGER] = libsbml.formulaToString(ast_trigger)
+        event[TRIGGER] = (libsbml.formulaToL3String(ast_trigger).replace("&&", " and ")
+                          .replace("||", " or ").replace("!", " not "))
 
         for event_assignment in e.getListOfEventAssignments():
             string_of_variable = event_assignment.getVariable()

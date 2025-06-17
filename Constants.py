@@ -15,6 +15,7 @@ TYPE_NUMBER = (libsbml.AST_INTEGER, libsbml.AST_REAL,
 # event
 TRIGGER = "trigger"
 PREVIOUS = "previous"
+IS_TIME = "is_time_trigger"
 LIST_OF_EVENT_ASSIGMENT = "list_of_event_assigment_list"
 DELAY = "delay"
 PRIORITY = "priority"
@@ -38,6 +39,7 @@ ERROR_EVENT_ASSIGNMENTS = "Event assignment"
 SAFE_GLOBALS_BASE = {"__builtins__": None, "math": math}
 SAFE_GLOBALS_RATE = {**SAFE_GLOBALS_BASE,
                      "pow": pow}
+'''
 SAFE_GLOBALS_TRIGGER = {**SAFE_GLOBALS_BASE,
                         # Relational
                         "eq": operator.eq,
@@ -51,3 +53,4 @@ SAFE_GLOBALS_TRIGGER = {**SAFE_GLOBALS_BASE,
                         "or": lambda a, b: a or b,
                         "not": lambda a: not a,
                         "xor": operator.xor}
+'''

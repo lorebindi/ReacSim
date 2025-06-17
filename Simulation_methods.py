@@ -5,16 +5,17 @@ import math
 import random
 
 def gillespie_ssa (model, t_max):
-
     def evaluate_expr(expr, error_message, safe_globals = SAFE_GLOBALS_BASE):
         # Merge state and parameters in a single dictionary for expression evaluation
-        local_scope = {**state, **parameters}
+        local_scope = {**state, **parameters, "time": t}
 
         try:
             return eval(expr, safe_globals, local_scope)
-        except Exception as e:
-            raise Exception(f"{error_message} — Evaluation failed.\nDetails: {str(e)}")
-
+        except:
+            raise Exception(
+                f"{error_message} — Evaluation failed.\n"
+                f"Expression: {expr}\n"
+            )
 
     t = 0.0
 
@@ -74,7 +75,9 @@ def gillespie_ssa (model, t_max):
         # can only be triggered after the simulation has started, that is, for t > 0.
         for event in events:
             trigger_expr = event[TRIGGER]
-            if evaluate_expr(trigger_expr, ERROR_TRIGGER, SAFE_GLOBALS_TRIGGER):
+            val_expr = evaluate_expr(trigger_expr, ERROR_TRIGGER)
+            # A trigger is active when its expr evaluates to True and its PREVIOUS value is False.
+            if not event[PREVIOUS] and val_expr:
                 for ea in event[LIST_OF_EVENT_ASSIGMENT]:
                     var_id = ea.getVariable()
                     value = evaluate_expr(libsbml.formulaToString(ea.getMath()),ERROR_EVENT_ASSIGNMENTS)
@@ -86,6 +89,7 @@ def gillespie_ssa (model, t_max):
                         parameters[var_id] = value
                     else:
                         raise Exception(f"Cannot apply assignment to unknown variable: {var_id}")
+            event[PREVIOUS] = val_expr
 
         evolution[TIME].append(t)
         for s_id in state:

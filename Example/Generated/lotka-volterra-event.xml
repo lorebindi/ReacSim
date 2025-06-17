@@ -25,7 +25,7 @@
 
     <!-- Specie -->
     <listOfSpecies>
-      <species id="Prey" compartment="cell" initialAmount="10"
+      <species id="Prey" compartment="cell" initialAmount="30"
                boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
                substanceUnits="item"/>
       <species id="Predator" compartment="cell" initialAmount="5"
@@ -35,9 +35,9 @@
 
     <!-- Parametri -->
     <listOfParameters>
-      <parameter id="alpha" value="1.1" constant="false" units="per_second"/> <!-- tasso di crescita delle prede -->
-      <parameter id="beta" value="0.4" constant="false" units="per_item_second"/> <!-- tasso di successo della caccia -->
-      <parameter id="gamma" value="0.4" constant="true" units="per_second"/> <!-- tasso di mortalità naturale -->
+      <parameter id="alpha" value="5" constant="false" units="per_second"/> <!-- tasso di crescita delle prede -->
+      <parameter id="beta" value="0.1" constant="false" units="per_item_second"/> <!-- tasso di successo della caccia -->
+      <parameter id="gamma" value="0.7" constant="true" units="per_second"/> <!-- tasso di mortalità naturale -->
     </listOfParameters>
 
      <!-- Reazioni -->
@@ -66,14 +66,14 @@
         </kineticLaw>
       </reaction>
 
-      <!-- Reazione 2: Prey + Predator -> 2*Predator (predatore consuma la preda e si riproduce) -->
+      <!-- Reazione 2: Prey + 2 Predator -> 3*Predator (predatore consuma la preda e si riproduce) -->
       <reaction id="Predation" reversible="false">
         <listOfReactants>
           <speciesReference species="Prey" stoichiometry="1"/>
-          <speciesReference species="Predator" stoichiometry="1.1"/>
+          <speciesReference species="Predator" stoichiometry="2"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="Predator" stoichiometry="2"/>
+          <speciesReference species="Predator" stoichiometry="3"/>
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -88,17 +88,17 @@
               <apply>
                 <power/>
                 <ci>Predator</ci>
-                <cn type="real">1.1</cn>
+                <cn type="real">2</cn>
               </apply>
             </apply>
           </math>
         </kineticLaw>
       </reaction>
 
-      <!-- Reazione 3: Predator ->   (morte del predatore) -->
+      <!-- Reazione 3: 1 Predator ->   (morte del predatore) -->
       <reaction id="PredatorDeath" reversible="false">
         <listOfReactants>
-          <speciesReference species="Predator" stoichiometry="1"/>
+          <speciesReference species="Predator" stoichiometry="1.5"/>
         </listOfReactants>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -108,7 +108,7 @@
               <apply>
                 <power/>
                 <ci>Predator</ci>
-                <cn type="integer">1</cn>
+                <cn type="real">1.5</cn>
               </apply>
             </apply>
           </math>
@@ -121,7 +121,7 @@
     <listOfEvents>
 
       <!-- Evento 1: aumento di alpha se Prey < 10 -->
-      <event id="IncreasePreyGrowth">
+      <!-- <event id="IncreasePreyGrowth">
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
@@ -134,14 +134,14 @@
         <listOfEventAssignments>
           <eventAssignment variable="alpha">
             <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <cn type="real">3.5</cn>
+              <cn type="real">10</cn>
             </math>
           </eventAssignment>
         </listOfEventAssignments>
-      </event>
+      </event> -->
 
       <!-- Evento 2: riduzione di beta se Predator > 20 -->
-      <event id="ReducePredationRate">
+      <!-- <event id="ReducePredationRate">
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
@@ -154,7 +154,39 @@
         <listOfEventAssignments>
           <eventAssignment variable="beta">
             <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <cn type="real">0.2</cn>
+              <cn type="real">0.01</cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event> -->
+
+      <!-- Evento 3: aumento di Pray al tempo 1 -->
+      <event id="AddPray">
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <and/>
+              <apply>
+                <geq/>
+                <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+                <cn type="integer">1</cn>
+              </apply>
+              <apply>
+                <lt/>
+                <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+                <cn type="integer">2</cn>
+              </apply>
+            </apply>
+          </math>
+        </trigger>
+        <listOfEventAssignments>
+          <eventAssignment variable="Prey">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <ci>Prey</ci>
+                <cn type="integer">20</cn>
+              </apply>
             </math>
           </eventAssignment>
         </listOfEventAssignments>

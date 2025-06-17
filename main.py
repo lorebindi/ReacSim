@@ -5,7 +5,7 @@ import time
 from Parser import *
 from Simulation_methods import *
 from Graph_generation import *
-T_MAX=10
+T_MAX=5
 
 if __name__ == '__main__':
     t=time.time()

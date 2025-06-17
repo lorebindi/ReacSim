@@ -398,3 +398,37 @@ def evaluate_rate(expr_rate):
             return eval(expr_trigger, {}, local_scope)
         except:
             raise Exception("Trigger evaluation failed.")
+
+
+
+
+'''
+    1 - reactant
+    AST_TIMES
+    ├── AST_NAME("beta")
+    └── AST_POWER
+        ├── AST_NAME("Prey")
+        └── AST_CN(1)
+
+    2 - reactants
+    AST_TIMES
+    ├── AST_TIMES
+    │   ├── AST_NAME("beta")
+    │   └── AST_POWER
+    │       ├── AST_NAME("Prey")
+    │       └── AST_CN(1)
+    └── AST_POWER
+        ├── AST_NAME("Predator")
+        └── AST_CN(1)
+
+    3 - reactants
+    (times)
+    ├── (times)
+    │    ├── (times)
+    │    │     ├── beta
+    │    │     └── pow(Prey, 1)
+    │    └── pow(Predator, 1)
+    └── pow(SomeOther, 1)
+
+    ...
+    '''
