@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
   <model id="LotkaVolterra">
 
     <!-- Definizione delle unità -->
@@ -38,6 +38,7 @@
       <parameter id="alpha" value="5" constant="false" units="per_second"/> <!-- tasso di crescita delle prede -->
       <parameter id="beta" value="0.1" constant="false" units="per_item_second"/> <!-- tasso di successo della caccia -->
       <parameter id="gamma" value="0.7" constant="true" units="per_second"/> <!-- tasso di mortalità naturale -->
+      <parameter id="time_delay" value="2" constant="true" units="per_second"/> <!-- tasso di mortalità naturale -->
     </listOfParameters>
 
      <!-- Reazioni -->
@@ -190,6 +191,11 @@
             </math>
           </eventAssignment>
         </listOfEventAssignments>
+         <delay>
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <ci>time_delay</ci>
+            </math>
+          </delay>
       </event>
 
       <!--<event id="ReducePredationRate">

@@ -254,6 +254,45 @@ def extract_events(model):
             for i in range(ast.getNumChildren()):
                 validate_event_assigment(ast.getChild(i))
 
+    """
+    Validates <delay> expressions to ensure they:
+    1. The expression inside the <math> block evaluate to a duration in seconds, 
+        which must match the model's time units without providing any unit conversion.
+    2. The expression must consist only of a single parameter or mathematical 
+        operations (only SUM and MINUS) involving parameters and/or numerical 
+        constants—no complex expressions or unsupported constructs are allowed.
+    """
+    def validate_delay(ast):
+        if ast is None:
+            raise Exception("AST is None.")
+        if ast.getType() in TYPE_NUMBER: # variable = constant
+            return
+        elif ast.getType() == libsbml.AST_NAME:
+            string_of_element = ast.getName()
+            element = model.getElementBySId(string_of_element)
+            if element is None:
+                raise Exception(f"Symbol '{string_of_element}' not found in model.")
+
+            if element.getTypeCode() not in TYPE_CODE:  # element != (Species, Parameter, Compartment))
+                raise Exception(f"Unsupported element type for symbol '{string_of_element}'")
+
+            if not element.isSetUnits():
+                raise Exception(f"Unsupported element type for symbol '{string_of_element}'")
+
+            # Check if the units are different
+            delay_units = element.getUnits()
+            delay_ud = model.getUnitDefinition(delay_units)
+
+            second_ud = model.getUnitDefinition('second')
+            if delay_ud is None or second_ud is None or not libsbml.UnitDefinition.areEquivalent(delay_ud, second_ud):
+                raise Exception(f"Unit mismatch: '{string_of_element}' has units different from assigned variable.")
+        else:
+            if ast.getType() not in TYPE_OP:
+                raise Exception("Only AST_PLUS and AST_MINUS are supported in the EventAssigment.")
+
+            for i in range(ast.getNumChildren()):
+                validate_event_assigment(ast.getChild(i))
+
     events = []
     for e in model.getListOfEvents():
         event = {
@@ -290,15 +329,24 @@ def extract_events(model):
             event[LIST_OF_EVENT_ASSIGMENT].append(event_assignment)
 
         # TODO: aggiungere delay e priority
+        # if version is 3 or there isn't the Delay tag, then we append the event and terminate by evaluating the single event
+        if model.getVersion() == 3 or not e.isSetDelay():
+            events.append(event)
+            continue
+
+        delay = e.getDelay()
+
+        validate_delay(delay.getMath())
+
+        event[DELAY]=delay
+
+
+        '''
+        1. l'espressione nel blocco math deve avere unit of time uguale (per noi secondi e senza alcun tipo di conversione)
+        2. dentro delay vanno SOLO singoli parametri o operazioni tra parametri e/o costanti.
+        '''
+
 
         events.append(event)
 
-        '''
-        1. le unità di misura.
-        2. variable contiene riferimenti a un Compartment, Species, SpeciesReference, Parameter
-            Permettiamo: 
-            a. costanti (<cn>) singole, variabili (species, ..., compartment) (<ci>) singole.
-            b. somme, differenze, moltiplicazioni
-        3. il blocco math restituisca un valore con la solità unità di misura di variable
-        '''
     return events
