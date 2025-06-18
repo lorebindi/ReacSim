@@ -32,6 +32,10 @@ per ogni t devo controllare che ogni event:
 
 Se delay scaduto e trigger corretto -> evento
 
+
+time > 0.25 and time < 0.50
+delay 0.1
+
  -->
 
 <listOfEvents>
