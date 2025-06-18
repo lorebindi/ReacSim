@@ -134,7 +134,7 @@ def extract_reactions(model):
             ID: r.getId(),
             REACTANTS: {},
             PRODUCTS: {},
-            RATE: None
+            RATE_FORMULA: None
         }
 
         # Reactans' coefficients
@@ -176,7 +176,7 @@ def extract_reactions(model):
             if contains_identifier(kinetic_law.getMath(), compartment.getId()):
                 raise Exception("Kinetic law invalid for us.")
 
-        reaction[RATE] = kinetic_law.getFormula()
+        reaction[RATE_FORMULA] = kinetic_law.getFormula()
 
         #TODO: inferenza della legge cinetica da dati forniti tramite file csv.
         # 1. Come diciamo quale reazione deve passare da l'inferenza?
@@ -262,44 +262,58 @@ def extract_events(model):
         operations (only SUM and MINUS) involving parameters and/or numerical 
         constants—no complex expressions or unsupported constructs are allowed.
     """
-    def validate_delay(ast):
+    def validate_delay(ast, constant_found = False, parameter_found = False):
         if ast is None:
             raise Exception("AST is None.")
         if ast.getType() in TYPE_NUMBER: # variable = constant
-            return
+            return True, parameter_found
         elif ast.getType() == libsbml.AST_NAME:
             string_of_element = ast.getName()
             element = model.getElementBySId(string_of_element)
             if element is None:
                 raise Exception(f"Symbol '{string_of_element}' not found in model.")
 
-            if element.getTypeCode() not in TYPE_CODE:  # element != (Species, Parameter, Compartment))
+            if element.getTypeCode() != libsbml.SBML_PARAMETER:  # element can only be a parameter
                 raise Exception(f"Unsupported element type for symbol '{string_of_element}'")
 
             if not element.isSetUnits():
                 raise Exception(f"Unsupported element type for symbol '{string_of_element}'")
 
-            # Check if the units are different
+            # Check if the units are seconds
             delay_units = element.getUnits()
             delay_ud = model.getUnitDefinition(delay_units)
 
-            second_ud = model.getUnitDefinition('second')
-            if delay_ud is None or second_ud is None or not libsbml.UnitDefinition.areEquivalent(delay_ud, second_ud):
-                raise Exception(f"Unit mismatch: '{string_of_element}' has units different from assigned variable.")
+            if delay_units == 'second' and delay_ud is None:
+                return constant_found, True
+            elif delay_units != 'second' and delay_ud is not None:
+                list = delay_ud.getListOfUnits()
+                if len(list) != 1:
+                    raise Exception(f"Too many units in {string_of_element}.")
+                if list[0].getKind() != libsbml.UNIT_KIND_SECOND:
+                    raise Exception(f"Unsupported unit type for symbol '{string_of_element}'. Only second supported.")
+                return constant_found, True
+            #TODO: estendere anche a unitDefinition custom per millisecond e minutes
+            raise Exception(f"Unsupported unit type for symbol '{string_of_element}'. Only second supported.")
+
         else:
             if ast.getType() not in TYPE_OP:
                 raise Exception("Only AST_PLUS and AST_MINUS are supported in the EventAssigment.")
 
             for i in range(ast.getNumChildren()):
-                validate_event_assigment(ast.getChild(i))
+                return_constant_found, return_parameter_found = validate_delay(ast.getChild(i))
+                constant_found = return_constant_found or constant_found
+                parameter_found = return_parameter_found or parameter_found
+
+            return constant_found, parameter_found
 
     events = []
     for e in model.getListOfEvents():
         event = {
-            TRIGGER: {},
+            ID: e.getId(),
+            TRIGGER_FORMULA: {},
             PREVIOUS: False,    # Value of trigger at t-tau (previous value)
-            LIST_OF_EVENT_ASSIGMENT: [],
-            DELAY: None,
+            LIST_OF_EVENT_ASSIGMENT_FORMULA: [],
+            DELAY_FORMULA: None,
             PRIORITY: None
         }
 
@@ -309,7 +323,7 @@ def extract_events(model):
         # Check if trigger condition is valid
         ast_trigger = trigger.getMath()
         validate_trigger_boolean_expr(ast_trigger)
-        event[TRIGGER] = (libsbml.formulaToL3String(ast_trigger).replace("&&", " and ")
+        event[TRIGGER_FORMULA] = (libsbml.formulaToL3String(ast_trigger).replace("&&", " and ")
                           .replace("||", " or ").replace("!", " not "))
 
         for event_assignment in e.getListOfEventAssignments():
@@ -326,7 +340,7 @@ def extract_events(model):
 
             validate_event_assigment(event_assignment.getMath())
 
-            event[LIST_OF_EVENT_ASSIGMENT].append(event_assignment)
+            event[LIST_OF_EVENT_ASSIGMENT_FORMULA].append(event_assignment)
 
         # TODO: aggiungere delay e priority
         # if version is 3 or there isn't the Delay tag, then we append the event and terminate by evaluating the single event
@@ -335,17 +349,13 @@ def extract_events(model):
             continue
 
         delay = e.getDelay()
+        ast_delay = delay.getMath()
 
-        validate_delay(delay.getMath())
+        bool_constant_found, bool_parameter_found = validate_delay(ast_delay)
+        if bool_constant_found and not bool_parameter_found:
+            raise Exception("Incorrect use of a constant for the delay.")
 
-        event[DELAY]=delay
-
-
-        '''
-        1. l'espressione nel blocco math deve avere unit of time uguale (per noi secondi e senza alcun tipo di conversione)
-        2. dentro delay vanno SOLO singoli parametri o operazioni tra parametri e/o costanti.
-        '''
-
+        event[DELAY_FORMULA]=libsbml.formulaToString(ast_delay)
 
         events.append(event)
 

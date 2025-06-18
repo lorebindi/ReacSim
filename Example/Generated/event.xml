@@ -14,8 +14,23 @@ Eventi (L2V4)
     - PLUS and MINUS between variables and costants.
     - PLUS and MINUS between variables.
     - Eventi legati al tempo
-    + Delay [DA FARE]
+    + Delay [DA FARE] (da capire persistent)
     + Priority [DA FARE]
+
+t(trigger)                         t(delay)                    persistent=false
+false->true                          true     [OK]
+false->true                          false    [NO]
+
+t(trigger)                         t(delay)                    persistent=true
+false->true                          true     [OK]
+false->true                          false    [OK]
+
+
+per ogni t devo controllare che ogni event:
+- il trigger sia sempre corretto
+- il delay non sia già scaduto
+
+Se delay scaduto e trigger corretto -> evento
 
  -->
 

@@ -180,6 +180,11 @@
             </apply>
           </math>
         </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci>time_delay</ci>
+          </math>
+        </delay>
         <listOfEventAssignments>
           <eventAssignment variable="Prey">
             <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -191,11 +196,6 @@
             </math>
           </eventAssignment>
         </listOfEventAssignments>
-         <delay>
-            <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <ci>time_delay</ci>
-            </math>
-          </delay>
       </event>
 
       <!--<event id="ReducePredationRate">

@@ -7,17 +7,17 @@ TIME = '_time_'
 ID = "id"
 REACTANTS = "reactants"
 PRODUCTS = "products"
-RATE = "rate"
+RATE_FORMULA = "rate_formula"
 
 TYPE_NUMBER = (libsbml.AST_INTEGER, libsbml.AST_REAL,
                libsbml.AST_REAL_E, libsbml.AST_RATIONAL)
 
 # event
-TRIGGER = "trigger"
+TRIGGER_FORMULA = "trigger_formula"
 PREVIOUS = "previous"
 IS_TIME = "is_time_trigger"
-LIST_OF_EVENT_ASSIGMENT = "list_of_event_assigment_list"
-DELAY = "delay"
+LIST_OF_EVENT_ASSIGMENT_FORMULA = "list_of_event_assigment_formula"
+DELAY_FORMULA = "delay_formula"
 PRIORITY = "priority"
 
 TYPE_TRIGGER_LOGICAL = (libsbml.AST_LOGICAL_AND, libsbml.AST_LOGICAL_OR,
@@ -36,6 +36,7 @@ TYPE_OP = (libsbml.AST_PLUS, libsbml.AST_MINUS)
 ERROR_KINETIC_LAW = "Kinetic Law"
 ERROR_TRIGGER = "Trigger"
 ERROR_EVENT_ASSIGNMENTS = "Event assignment"
+ERROR_DELAY = "Delay"
 SAFE_GLOBALS_BASE = {"__builtins__": None, "math": math}
 SAFE_GLOBALS_RATE = {**SAFE_GLOBALS_BASE,
                      "pow": pow}
