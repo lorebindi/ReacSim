@@ -1,3 +1,5 @@
+from sys import flags
+
 from Constants import *
 import libsbml
 
@@ -47,6 +49,7 @@ def extract_parameters(model):
     parameters.update({c.getId(): 1.0 for c in model.getListOfCompartments()})
     return parameters
 
+#FIXME remove, use for debugging
 def print_ast(node, indent=0):
     if node is None:
         return
@@ -227,12 +230,15 @@ def extract_events(model):
     '''
     # TODO: estendere alle altre operazioni (TIMES, DIV) e math functions
     def validate_event_assigment(ast):
+        event_assignment_input_vars = {} # store the set of variables used in the eventAssignment's Math expression
         if ast is None:
             raise Exception("AST is None.")
         if ast.getType() in TYPE_NUMBER: # variable = constant
-            return
+            pass
         elif ast.getType() == libsbml.AST_NAME:
             string_of_element = ast.getName()
+            if use_trigger_values:
+                event_assignment_input_vars[string_of_element] = None
             element = model.getElementBySId(string_of_element)
             if element is None:
                 raise Exception(f"Symbol '{string_of_element}' not found in model.")
@@ -252,7 +258,10 @@ def extract_events(model):
                 raise Exception("Only AST_PLUS and AST_MINUS are supported in the EventAssigment.")
 
             for i in range(ast.getNumChildren()):
-                validate_event_assigment(ast.getChild(i))
+                return_value = validate_event_assigment(ast.getChild(i))
+                if use_trigger_values:
+                    event_assignment_input_vars.update(return_value)
+        return event_assignment_input_vars
 
     """
     Validates <delay> expressions to ensure they:
@@ -312,10 +321,25 @@ def extract_events(model):
             ID: e.getId(),
             TRIGGER_FORMULA: {},
             PREVIOUS: False,    # Value of trigger at t-tau (previous value)
-            LIST_OF_EVENT_ASSIGMENT_FORMULA: [],
+            LIST_OF_EVENT_ASSIGMENT: [],
             DELAY_FORMULA: None,
-            PRIORITY: None
+            USE_VALUES_FROM_TRIGGER_TIME: None,
+            VALUES_FROM_TRIGGER_TIME: {}
         }
+
+        # In SBML Level 2 Version 4, the useValuesFromTriggerTime attribute is only valid if a delay is also defined.
+        # This block checks that constraint and sets a flag (use_trigger_values) to True only if the event has a delay
+        # and set UseValuesFromTriggerTime to True or is not setted.
+        use_trigger_values = False
+        if model.getVersion() == 4:
+            # Events with useValuesFromTriggerTime and without delay are not allowed
+            if not e.isSetDelay() and e.isSetUseValuesFromTriggerTime():
+                raise Exception("Is not possible having an event with useValuesFromTriggerTime attribute without the delay")
+
+            if e.isSetDelay() and e.getUseValuesFromTriggerTime():
+                use_trigger_values = True
+
+            event[USE_VALUES_FROM_TRIGGER_TIME] = use_trigger_values
 
         trigger = e.getTrigger()
         if trigger is None:
@@ -326,6 +350,7 @@ def extract_events(model):
         event[TRIGGER_FORMULA] = (libsbml.formulaToL3String(ast_trigger).replace("&&", " and ")
                           .replace("||", " or ").replace("!", " not "))
 
+        # TODO: controllare che le variable siano tutte diverse
         for event_assignment in e.getListOfEventAssignments():
             string_of_variable = event_assignment.getVariable()
             variable = model.getElementBySId(string_of_variable)
@@ -338,11 +363,14 @@ def extract_events(model):
                 raise Exception("Undefined unit definition for variable.")
             unit_definition_variable = model.getUnitDefinition(unit_id)
 
-            validate_event_assigment(event_assignment.getMath())
+            # Check the eventAssignment
+            trigger_value_dict = validate_event_assigment(event_assignment.getMath())
+            if use_trigger_values:
+                event[VALUES_FROM_TRIGGER_TIME].update(trigger_value_dict)
+            event[LIST_OF_EVENT_ASSIGMENT].append(event_assignment)
 
-            event[LIST_OF_EVENT_ASSIGMENT_FORMULA].append(event_assignment)
 
-        # TODO: aggiungere delay e priority
+        # TODO: aggiungere priority (supportata solo al livello 3)
         # if version is 3 or there isn't the Delay tag, then we append the event and terminate by evaluating the single event
         if model.getVersion() == 3 or not e.isSetDelay():
             events.append(event)

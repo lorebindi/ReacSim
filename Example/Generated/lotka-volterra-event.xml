@@ -35,10 +35,10 @@
 
     <!-- Parametri -->
     <listOfParameters>
-      <parameter id="alpha" value="5" constant="false" units="per_second"/> <!-- tasso di crescita delle prede -->
-      <parameter id="beta" value="0.1" constant="false" units="per_item_second"/> <!-- tasso di successo della caccia -->
-      <parameter id="gamma" value="0.7" constant="true" units="per_second"/> <!-- tasso di mortalità naturale -->
-      <parameter id="time_delay" value="0.5" constant="true" units="per_second"/> <!-- tasso di mortalità naturale -->
+      <parameter id="alpha" value="100" constant="false" units="per_second"/> <!-- tasso di crescita delle prede -->
+      <parameter id="beta" value="0.001" constant="false" units="per_item_second"/> <!-- tasso di successo della caccia -->
+      <parameter id="gamma" value="50" constant="true" units="per_second"/> <!-- tasso di mortalità naturale -->
+      <parameter id="time_delay" value="0.75" constant="true" units="per_second"/> <!--  -->
     </listOfParameters>
 
      <!-- Reazioni -->
@@ -118,11 +118,11 @@
 
     </listOfReactions>
 
-    <!-- Eventi
-    <listOfEvents> -->
+    <!-- Eventi -->
+    <!--<listOfEvents>-->
 
       <!-- Evento 1: aumento di alpha se Prey < 10 -->
-      <!-- <event id="IncreasePreyGrowth">
+       <!-- <event id="IncreasePreyGrowth" useValuesFromTriggerTime="true">
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
@@ -132,14 +132,85 @@
             </apply>
           </math>
         </trigger>
+         <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci>time_delay</ci>
+          </math>
+        </delay>
         <listOfEventAssignments>
           <eventAssignment variable="alpha">
             <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <cn type="real">10</cn>
+              <ci>gamma</ci>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="gamma">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <cn type="integer">5</cn>
+                <ci>gamma</ci>
+              </apply>
             </math>
           </eventAssignment>
         </listOfEventAssignments>
       </event> -->
+      <!-- Evento 3: aumento di Pray al tempo 1 -->
+      <!--<event id="AddPray">
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <geq/>
+                <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+                <cn type="real">0.01</cn>
+              </apply>
+          </math>
+        </trigger>
+        <delay>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci>time_delay</ci>
+          </math>
+        </delay>
+        <listOfEventAssignments>
+          <eventAssignment variable="Prey">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <ci>Prey</ci>
+                <cn type="integer">100</cn>
+              </apply>
+            </math>
+          </eventAssignment>
+          <eventAssignment variable="Predator">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn type="integer">1</cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>-->
+
+      <!--<event id="ReducePredationRate">
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci>Predator</ci>
+              <cn type="integer">20</cn>
+            </apply>
+          </math>
+        </trigger>
+        <listOfEventAssignments>
+          <eventAssignment variable="gamma">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <ci>gamma</ci>
+                <ci>alpha</ci>
+                <cn type="real">0.2</cn>
+              </apply>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>-->
 
       <!-- Evento 2: riduzione di beta se Predator > 20 -->
       <!-- <event id="ReducePredationRate">
@@ -173,66 +244,6 @@
         </listOfEventAssignments>
       </event> -->
 
-      <!-- Evento 3: aumento di Pray al tempo 1 -->
-      <!--<event id="AddPray">
-        <trigger>
-          <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply>
-              <and/>
-              <apply>
-                <geq/>
-                <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
-                <cn type="real">0.25</cn>
-              </apply>
-              <apply>
-                <lt/>
-                <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
-                <cn type="real">1.0</cn>
-              </apply>
-            </apply>
-          </math>
-        </trigger> -->
-        <!--<delay>
-          <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <ci>time_delay</ci>
-          </math>
-        </delay> -->
-        <!--<listOfEventAssignments>
-          <eventAssignment variable="Prey">
-            <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <apply>
-                <plus/>
-                <ci>Prey</ci>
-                <cn type="integer">100</cn>
-              </apply>
-            </math>
-          </eventAssignment>
-        </listOfEventAssignments>
-      </event> -->
-
-      <!--<event id="ReducePredationRate">
-        <trigger>
-          <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply>
-              <gt/>
-              <ci>Predator</ci>
-              <cn type="integer">20</cn>
-            </apply>
-          </math>
-        </trigger>
-        <listOfEventAssignments>
-          <eventAssignment variable="gamma">
-            <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <apply>
-                <plus/>
-                <ci>gamma</ci>
-                <ci>alpha</ci>
-                <cn type="real">0.2</cn>
-              </apply>
-            </math>
-          </eventAssignment>
-        </listOfEventAssignments>
-      </event>-->
 
     <!--</listOfEvents>-->
 

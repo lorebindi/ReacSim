@@ -16,9 +16,11 @@ TYPE_NUMBER = (libsbml.AST_INTEGER, libsbml.AST_REAL,
 TRIGGER_FORMULA = "trigger_formula"
 PREVIOUS = "previous"
 IS_TIME = "is_time_trigger"
-LIST_OF_EVENT_ASSIGMENT_FORMULA = "list_of_event_assigment_formula"
+LIST_OF_EVENT_ASSIGMENT = "list_of_event_assigment"
 DELAY_FORMULA = "delay_formula"
 PRIORITY = "priority"
+USE_VALUES_FROM_TRIGGER_TIME = "use_values_from_trigger_time"
+VALUES_FROM_TRIGGER_TIME = "values_from_trigger_time"
 
 TYPE_TRIGGER_LOGICAL = (libsbml.AST_LOGICAL_AND, libsbml.AST_LOGICAL_OR,
               libsbml.AST_LOGICAL_NOT, libsbml.AST_LOGICAL_XOR)

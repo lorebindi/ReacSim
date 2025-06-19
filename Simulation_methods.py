@@ -37,9 +37,15 @@ def gillespie_ssa (model, t_max):
                 f"Expression: {expr}\n"
             )
 
-    def apply_events_assigment(event_assigment):
-        for ea in event_assigment:
+    def apply_events_assigment(events_assigments, values_from_trigger_time):
+        for ea in events_assigments:
             var_id = ea.getVariable()
+            # Update the current state and parameters with the values captured at the trigger time
+            for var_ea, value_ea in values_from_trigger_time.items():
+                if var_ea in state:
+                    state[var_ea] =  value_ea
+                elif var_ea in parameters:
+                    parameters[var_ea] = value_ea
             value = evaluate_expr(libsbml.formulaToString(ea.getMath()), ERROR_EVENT_ASSIGNMENTS, t)
 
             # Apply to the right variable
@@ -105,12 +111,13 @@ def gillespie_ssa (model, t_max):
             for id_event, (_, event) in pending_event_delay.items():
                 # Delete the events whose trigger is False
                 if not evaluate_expr(event[TRIGGER_FORMULA], ERROR_TRIGGER, t):
+                    event[VALUES_FROM_TRIGGER_TIME] = {}
                     del pending_event_delay[id_event]
 
         # Adding all the True-valuated events without delay or delay=0 at time t
         for event in events:
             trigger_expr = event[TRIGGER_FORMULA]
-            val_trigger = evaluate_expr(trigger_expr, ERROR_TRIGGER,t) # at time t
+            val_trigger = evaluate_expr(trigger_expr, ERROR_TRIGGER, t) # at time t
             # The event isn't triggered
             if not(not event[PREVIOUS] and val_trigger):
                 event[PREVIOUS] = val_trigger
@@ -131,6 +138,13 @@ def gillespie_ssa (model, t_max):
                 elif delay_time > 0:
                     # Triggered event's delay tag contains a value > 0
                     pending_event_delay[event[ID]] = (t + delay_time, event) # Adding new event with delay
+                    # Storing the values at trigger time for the input variables used in event assignments
+                    if event[USE_VALUES_FROM_TRIGGER_TIME]:
+                        for key_ea in event[VALUES_FROM_TRIGGER_TIME].keys():
+                            if key_ea in state:
+                                event[VALUES_FROM_TRIGGER_TIME][key_ea] = state[key_ea]
+                            elif key_ea in parameters:
+                                event[VALUES_FROM_TRIGGER_TIME][key_ea] = parameters[key_ea]
                 else:
                     raise Exception("The delay time is lesser than 0.")
 
@@ -141,7 +155,9 @@ def gillespie_ssa (model, t_max):
             for event in to_eval_events:
                 # Check that the trigger is still True
                 if evaluate_expr(event[TRIGGER_FORMULA], ERROR_TRIGGER, t):
-                    apply_events_assigment(event[LIST_OF_EVENT_ASSIGMENT_FORMULA])
+                    # event[VALUES_FROM_TRIGGER_TIME] may be {} if eventAssigment use only constant or if
+                    # useValuesFromTriggerTime="false"
+                    apply_events_assigment(event[LIST_OF_EVENT_ASSIGMENT], event[VALUES_FROM_TRIGGER_TIME])
 
             # Updating the evolution of species
             evolution[TIME].append(t)

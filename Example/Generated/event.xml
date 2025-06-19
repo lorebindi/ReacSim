@@ -26,15 +26,20 @@ false->true                          true     [OK]
 false->true                          false    [OK]
 
 
-per ogni t devo controllare che ogni event:
-- il trigger sia sempre corretto
-- il delay non sia già scaduto
+useValuesFromTriggerTime = false:
+- come ora
+- i valori utilizzati negli eventAssignment sono quelli presenti
+    dopo delay.
+useValuesFromTriggerTime = true:
+- i valori utilizzati negli eventAssignment sono quelli presenti
+    al momento in cui il trigger scatta. L'esecuzione degli eventAssigment
+    rimane sempre al termine del delay
 
-Se delay scaduto e trigger corretto -> evento
+Ti permette di controllare se le eventAssignment devono riflettere lo stato
+del sistema quando il trigger scatta o quando l’evento viene
+effettivamente eseguito.
 
-
-time > 0.25 and time < 0.50
-delay 0.1
+Se l'evento è senza delay e specifica l'attributo allora l'SBML è falso.
 
  -->
 
