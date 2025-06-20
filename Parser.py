@@ -1,5 +1,3 @@
-from sys import flags
-
 from Constants import *
 import libsbml
 
@@ -332,9 +330,13 @@ def extract_events(model):
         # and set UseValuesFromTriggerTime to True or is not setted.
         use_trigger_values = False
         if model.getVersion() == 4:
+            '''
             # Events with useValuesFromTriggerTime and without delay are not allowed
+            a = e.isSetDelay()
+            b = e.isSetUseValuesFromTriggerTime()
             if not e.isSetDelay() and e.isSetUseValuesFromTriggerTime():
                 raise Exception("Is not possible having an event with useValuesFromTriggerTime attribute without the delay")
+            '''
 
             if e.isSetDelay() and e.getUseValuesFromTriggerTime():
                 use_trigger_values = True

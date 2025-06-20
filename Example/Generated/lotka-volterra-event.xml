@@ -35,10 +35,10 @@
 
     <!-- Parametri -->
     <listOfParameters>
-      <parameter id="alpha" value="100" constant="false" units="per_second"/> <!-- tasso di crescita delle prede -->
+      <parameter id="alpha" value="2" constant="false" units="per_second"/> <!-- tasso di crescita delle prede -->
       <parameter id="beta" value="0.001" constant="false" units="per_item_second"/> <!-- tasso di successo della caccia -->
-      <parameter id="gamma" value="50" constant="true" units="per_second"/> <!-- tasso di mortalità naturale -->
-      <parameter id="time_delay" value="0.75" constant="true" units="per_second"/> <!--  -->
+      <parameter id="gamma" value="0.001" constant="true" units="per_second"/> <!-- tasso di mortalità naturale -->
+      <parameter id="time_delay" value="0.25" constant="true" units="per_second"/> <!--  -->
     </listOfParameters>
 
      <!-- Reazioni -->
@@ -99,7 +99,7 @@
       <!-- Reazione 3: 1 Predator ->   (morte del predatore) -->
       <reaction id="PredatorDeath" reversible="false">
         <listOfReactants>
-          <speciesReference species="Predator" stoichiometry="1.5"/>
+          <speciesReference species="Predator" stoichiometry="1"/>
         </listOfReactants>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -109,7 +109,7 @@
               <apply>
                 <power/>
                 <ci>Predator</ci>
-                <cn type="real">1.5</cn>
+                <cn type="integer">1</cn>
               </apply>
             </apply>
           </math>
@@ -119,10 +119,9 @@
     </listOfReactions>
 
     <!-- Eventi -->
-    <!--<listOfEvents>-->
+    <listOfEvents>
 
-      <!-- Evento 1: aumento di alpha se Prey < 10 -->
-       <!-- <event id="IncreasePreyGrowth" useValuesFromTriggerTime="true">
+       <event id="IncreasePreyGrowth" useValuesFromTriggerTime="false">
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
@@ -138,24 +137,20 @@
           </math>
         </delay>
         <listOfEventAssignments>
-          <eventAssignment variable="alpha">
+          <eventAssignment variable="Prey">
             <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <ci>gamma</ci>
+              <cn type="integer">50</cn>
             </math>
           </eventAssignment>
-          <eventAssignment variable="gamma">
+          <eventAssignment variable="Predator">
             <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <apply>
-                <plus/>
-                <cn type="integer">5</cn>
-                <ci>gamma</ci>
-              </apply>
+              <cn type="integer">10</cn>
             </math>
           </eventAssignment>
         </listOfEventAssignments>
-      </event> -->
-      <!-- Evento 3: aumento di Pray al tempo 1 -->
-      <!--<event id="AddPray">
+      </event>
+
+      <event id="AddPray">
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
               <apply>
@@ -186,34 +181,29 @@
             </math>
           </eventAssignment>
         </listOfEventAssignments>
-      </event>-->
+      </event> -->
 
-      <!--<event id="ReducePredationRate">
+      <event id="ReducePredationRate">
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <gt/>
               <ci>Predator</ci>
-              <cn type="integer">20</cn>
+              <cn type="integer">5</cn>
             </apply>
           </math>
         </trigger>
         <listOfEventAssignments>
-          <eventAssignment variable="gamma">
+          <eventAssignment variable="Predator">
             <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <apply>
-                <plus/>
-                <ci>gamma</ci>
-                <ci>alpha</ci>
-                <cn type="real">0.2</cn>
-              </apply>
+              <cn type="integer">1</cn>
             </math>
           </eventAssignment>
         </listOfEventAssignments>
-      </event>-->
+      </event>
 
       <!-- Evento 2: riduzione di beta se Predator > 20 -->
-      <!-- <event id="ReducePredationRate">
+      <event id="ReducePredationRate">
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
@@ -242,10 +232,9 @@
               </math>
             </eventAssignment>
         </listOfEventAssignments>
-      </event> -->
+      </event>
 
-
-    <!--</listOfEvents>-->
+    </listOfEvents>
 
   </model>
 </sbml>

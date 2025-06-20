@@ -1,6 +1,6 @@
 from Constants import *
 
-import Parser
+from Parser import *
 import math
 import random
 
@@ -60,19 +60,19 @@ def gillespie_ssa (model, t_max):
 
     pending_event_delay = {} # The set of all events with active delay
 
-    state = Parser.extract_species(model)
+    state = extract_species(model)
     if state is None:
         raise Exception("Model has no species")
 
-    reactions = Parser.extract_reactions(model)
+    reactions = extract_reactions(model)
     if reactions is None:
         raise Exception("Model has no reactions")
 
-    parameters = Parser.extract_parameters(model)
+    parameters = extract_parameters(model)
     if parameters is None:
         raise Exception("Model has no parameters")
 
-    events = Parser.extract_events(model)
+    events = extract_events(model)
 
     evolution = {TIME: [t]}
     evolution.update({id_specie: [amount] for id_specie,amount in state.items()})
@@ -135,9 +135,7 @@ def gillespie_ssa (model, t_max):
                 if delay_time == 0:
                     # Triggered event's delay tag contains zero
                     to_eval_events.append(event)
-                elif delay_time > 0:
-                    # Triggered event's delay tag contains a value > 0
-                    pending_event_delay[event[ID]] = (t + delay_time, event) # Adding new event with delay
+                elif delay_time > 0: # Triggered event's delay tag contains a value > 0
                     # Storing the values at trigger time for the input variables used in event assignments
                     if event[USE_VALUES_FROM_TRIGGER_TIME]:
                         for key_ea in event[VALUES_FROM_TRIGGER_TIME].keys():
@@ -145,6 +143,10 @@ def gillespie_ssa (model, t_max):
                                 event[VALUES_FROM_TRIGGER_TIME][key_ea] = state[key_ea]
                             elif key_ea in parameters:
                                 event[VALUES_FROM_TRIGGER_TIME][key_ea] = parameters[key_ea]
+
+                    # Adding new event with delay
+                    pending_event_delay[event[ID]] = (t + delay_time, event)
+
                 else:
                     raise Exception("The delay time is lesser than 0.")
 

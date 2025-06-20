@@ -1,408 +1,6 @@
-import libsbml
-import random
-import math
-
-# ======= 1. Carica il modello SBML =======
-def load_sbml_model(filename):
-    reader = libsbml.SBMLReader()
-    doc = reader.readSBML(filename)
-    if doc.getNumErrors() > 0:
-        doc.printErrors()
-        raise Exception("Errore nella lettura del file SBML.")
-    model = doc.getModel()
-    if model is None:
-        raise Exception("Nessun modello trovato.")
-    return model
-
-# ======= 2. Estrai specie =======
-def extract_species(model):
-    species = {}
-    for s in model.getListOfSpecies():
-        if s.getHasOnlySubstanceUnits():  # Ignora se non ha quantità
-            continue
-        species[s.getId()] = s.getInitialAmount()
-    return species
-
-
-'''if compartment_id is None:
-                species[s.getId()] = (s.getName(), None)
-                continue
-
-            compartment = model.getCompartment(compartment_id)
-            if compartment is None:
-                species[s.getId()] = (s.getName(), None)
-                continue
-
-            volume = compartment.getSize()
-            if volume is None:
-                species[s.getId()] = (s.getName(), None)
-                continue
-
-            species[s.getId()] = (s.getName(), volume * s.getInitialConcentration())'''
-
-
-
-
-
-# ======= 3. Estrai reazioni =======
-def extract_reactions(model):
-    compartment_reaction_map = {}
-    numCompartments = model.getNumCompartments()
-    if numCompartments == 0:
-        compartment_reaction_map[UNIQUE_COMPARTMENT] = {}
-
-    for r in model.getListOfReactions():
-        reaction = {
-            "id": r.getId(),
-            "reactants": {},
-            "products": {},
-            "rate": None,
-            "parameters": {}
-        }
-
-        compartment_name = r.getCompartment()
-        # 3 cases:
-        #  1. no compartment,
-        #  2. some compartments and some reactions without compartment,
-        #  3. some compartment and all the reactions has a compartment
-
-        if compartment_name is None :
-            if numCompartments > 0: # We have more compartments and just some reactions without compartment
-                return None
-            # Any compartments
-            compartment_name = UNIQUE_COMPARTMENT
-
-        # Reactans' coefficients
-        reactants_ids = []
-        for sr in r.getListOfReactants():
-            reactants_ids.append(sr.getId()) #usefull to check if the kinectik law is mass action law
-            reaction["reactants"][sr.getSpecies()] = sr.getStoichiometry()
-
-        # Products' coefficients
-        for sp in r.getListOfProducts():
-            reaction["products"][sp.getSpecies()] = sp.getStoichiometry()
-
-        # Kinectic law
-        kinetic_law = r.getKineticLaw()
-        if kinetic_law is None:
-            return None
-
-        formula = kinetic_law.getFormula()
-        if not is_mass_action(formula, reactants_ids):
-            return None
-
-        reaction["rate"] = formula
-
-        #TODO: supporto ad altre o qualsiasi legge cineticha
-
-        #TODO: inferimento della legge cinetica da dati forniti tramite file csv.
-        # 1. Come diciamo quale reazione deve passare da l'inferimento?
-        # 2. Generazione punti dati da cui inferire?
-
-        # Parametri
-        params = {p.getId(): p.getValue() for p in kinetic_law.getListOfParameters()}
-        reaction["parameters"] = params
-
-        compartment_reaction_map[compartment_name].append(reaction)
-        #TODO: se fosse il primo inserimento per quella chiave specifica?
-
-    return compartment_reaction_map
-
-# ======= 4. Valuta il tasso di una reazione dinamicamente =======
-def evaluate_rate(formula, species, parameters):
-    # Esegui formula in un contesto sicuro con solo species e parametri
-    local_dict = {}
-    local_dict.update(species)
-    local_dict.update(parameters)
-    try:
-        return eval(formula, {"__builtins__": None, "math": math}, local_dict)
-    except:
-        return 0.0
-
-# ======= 5. Simulazione Gillespie =======
-def gillespie_simulation(species, reactions, t_max):
-    time = 0.0
-    history = [(time, species.copy())]
-
-    while time < t_max:
-        # Calcola propensità (tassi) di ogni reazione
-        propensities = []
-        for r in reactions:
-            a = evaluate_rate(r["rate_formula"], species, r["parameters"])
-            propensities.append(a)
-
-        a0 = sum(propensities)
-        if a0 == 0:
-            break  # Nessuna reazione può avvenire
-
-        # Tempo alla prossima reazione
-        y = random.random()
-        tau = -math.log(y) / a0
-        time += tau
-
-        # Quale reazione avviene
-        r2 = random.random() * a0
-        cumulative = 0.0
-        for i, a in enumerate(propensities):
-            cumulative += a
-            if r2 < cumulative:
-                chosen = i
-                break
-
-        # Aggiorna specie
-        r = reactions[chosen]
-        for s, stoich in r["reactants"].items():
-            species[s] -= stoich
-        for s, stoich in r["products"].items():
-            species[s] += stoich
-
-        # Salva stato
-        history.append((time, species.copy()))
-
-    return history
-
-# ======= 6. Esegui tutto =======
-if __name__ == "__main__":
-    filename = "model.xml"  # <-- cambia con il tuo file
-
-    model = load_sbml_model(filename)
-    species = extract_species(model)
-    reactions = extract_reactions(model)
-
-    result = gillespie_simulation(species, reactions, t_max=50.0)
-
-    # Stampa i risultati
-    for t, state in result:
-        print(f"t={t:.3f}", state)
-
-
-
-def _crea_grafo_linee_ffvsOS(applicazione, parallelism, max_batch, titolo, datiff, datiOS, max_y):
-    if not datiff or not datiOS:
-        raise ValueError("Il parametro 'dati' è vuoto o non valido.")
-    etichette_asse_x = ['0'] + [str(2 ** i) for i in range(1, max_batch) if 2 ** i <= max_batch]
-    #etichette_asse_x = ["Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4", "Scenario 5", "Scenario 6","Scenario 7"]
-    medie_ff = [val['media'] for val in datiff.values()]  # Estrae il valore 'media' per ogni elemento
-    dev_std_ff = [val['dev_std'] for val in datiff.values()]  # Estrae il valore 'dev_std' per ogni elemento
-    medie_OS = [val['media'] for val in datiOS.values()]  # Estrae il valore 'media' per ogni elemento
-    dev_std_OS = [val['dev_std'] for val in datiOS.values()]  # Estrae il valore 'dev_std' per ogni elemento
-    #dati_asse_x = [1_000_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000, 6_000_000, 6_999_999]
-    # Calcolo del rapporto media/deviazione standard
-    rapporto_soglia = 0.008
-    save_dir = '/home/lorenzo/Desktop/Grafici_Tesi/ffvsOS'
-
-    # Creazione del grafico
-    plt.figure(figsize=(6, 4))
-
-    # Calcola le etichette e i valori dei ticks per l'asse Y
-    yticks_values, yticks_labels = _calcola_etichette_assey_app(applicazione, max_y)
-    if(yticks_values == [] or yticks_labels == []):
-        raise ValueError("yticks vuoti")
-    plt.yticks(yticks_values, yticks_labels, fontsize=12)
-
-    # Aggiungere un margine extra al limite dell'asse Y
-    plt.ylim(min(yticks_values), max(yticks_values))
-
-    # Impostiamo i limiti dell'asse X in modo che parta da 0 e arrivi al massimo valore dei dati
-    plt.xlim(-0.5,
-             len(etichette_asse_x) - 0.5)  # L'asse X avrà solo 2 etichette, quindi va da -0.5 a 1.5 per centrare le barre
-
-    #Disegnare le linee orizzontali per ogni valore di yticks_values
-    for ytick in yticks_values:
-        plt.hlines(ytick, -0.5, len(etichette_asse_x) - 0.5, colors='gray', linestyles='--', linewidth=0.6,
-                   zorder=1)  # Linea tratteggiata, zorder basso per metterle sotto le barre
-    # Aggiungere linee a metà tra ogni intervallo
-    for i in range(1, len(yticks_values)):
-        halfway = (yticks_values[i] + yticks_values[i - 1]) / 2  # Calcolare il punto centrale tra i tick
-        plt.hlines(halfway, -0.5, len(etichette_asse_x) - 0.5, colors='lightgray', linestyles='--',
-                   linewidth=0.8)  # Linea leggera tra i tick
-
-    # Linea per datiff (FastFlow) con barre di errore
-    plt.errorbar(
-        etichette_asse_x, medie_ff, yerr=dev_std_ff,
-        label='FastFlow pinning throughput', marker='s', color='#1B4F72',
-        linestyle='-', linewidth=2, elinewidth=1.5, capsize=0
-    )
-
-    # Linea per datiOS con barre di errore
-    plt.errorbar(
-        etichette_asse_x, medie_OS, yerr=dev_std_OS,
-        label='OS Scheduler throughput ', marker='s', color='#C41E3A',
-        linestyle='-', linewidth=2, elinewidth=1, capsize=0
-    )
-
-    # Linea per datiff (FastFlow)
-    #plt.plot(etichette_asse_x, medie_ff, label=r'$\mu$ throughput FastFlow pinning', marker='s', color='#1B4F72', linestyle='-', linewidth=2)
-
-    # Linea per datiOS
-    #plt.plot(etichette_asse_x, medie_OS, label=r'$\mu$ throughput OS scheduler', marker='s', color='#C41E3A', linestyle='-', linewidth=2)
-
-
-    # Titoli e etichette
-    plt.title(titolo, fontsize=16)
-    plt.xlabel('Batch Size', fontsize=14)
-    if applicazione == "SD":
-        plt.ylabel('Throughput (M t/s)', fontsize=14)
-    if applicazione == "WC":
-        plt.ylabel('Throughput (MB/s)', fontsize=14)
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
-
-    # Legenda
-    plt.legend(fontsize=10, loc='upper left')
-
-    # Griglia
-    #plt.grid(visible=True, linestyle='--', alpha=0.6)
-
-    # Salvataggio del grafico
-    save_path = os.path.join(save_dir, f"{applicazione+"_"+parallelism}.png")
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=900)
-    print(f"Grafico salvato in: {save_path}")
-
-    # Mostra il grafico
-    plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def is_mass_action(formula, reactant_ids):
-    if formula is None:
-        return False
-
-    # Rimuovi spazi
-    formula = formula.replace(" ", "")
-
-    # La formula deve contenere solo una costante e i reagenti (es. "k*A*B")
-    pattern = r'^[\w\.]+(\*[\w\.]+)*$'
-    if not re.fullmatch(pattern, formula):
-        return False
-
-    # Tutti i reagenti devono essere presenti
-    for rid in reactant_ids:
-        if rid not in formula:
-            return False
-
-    return True
-
-
-
-
-
-
-
-
-
-
-
-def contains_identifier(math_ast, target_id):
-    if math_ast is None:
-        return False
-
-    # Recursively search for a node with name target_id
-    def traverse(node):
-        if node is None:
-            return False
-        if node.getType() == libsbml.AST_NAME:
-            return node.getName() == target_id
-        for i in range(node.getNumChildren()):
-            if traverse(node.getChild(i)):
-                return True
-        return False
-
-    return traverse(math_ast)
-
-def print_ast(node, indent=0):
-    if node is None:
-        return
-
-    print('  ' * indent + f"type: {node.getType()}, name: {node.getName()}, value: {node.getValue()}")
-
-    for i in range(node.getNumChildren()):
-        print_ast(node.getChild(i), indent + 1)
-
-# TODO: mettere reactants e kinetic_law come variabili globali?
-def validate_mass_action_structure(ast, reactants, kinetic_law, kinetic_constant_found=0):
-
-    if ast is None:
-        raise Exception("AST is None.")
-
-    # Always * at the root
-    if ast.getType() != libsbml.AST_TIMES:
-        raise Exception("AST's root is not TIMES(*).")
-
-    # Get all child nodes (multiplicands)
-    children = [ast.getChild(i) for i in range(ast.getNumChildren())]
-
-    for child in children:
-        if child.getType() == libsbml.AST_TIMES:
-            kinetic_constant_found = validate_mass_action_structure(child, reactants, kinetic_law, kinetic_constant_found)
-            # There must be at least one parameter (rate constant)
-            if kinetic_constant_found > 1:
-                raise Exception("Too many kinetic constant.")
-        elif child.getType() == libsbml.AST_NAME:  # kinetic constant
-            kinetic_constant_found += 1
-        elif child.getType() == libsbml.AST_FUNCTION_POWER:
-            base = child.getChild(0)
-            exponent = child.getChild(1)
-            if (
-                    base.getType() != libsbml.AST_NAME or
-                    base.getName() not in reactants or
-                    exponent.getType() != libsbml.AST_INTEGER or
-                    exponent.getValue() != reactants[base.getName()]
-            ):
-                raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
-        else:
-            raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
-                            f"value: {child.getValue()}) in: {kinetic_law.getFormula()}")
-
-    return kinetic_constant_found
-
-
-    is_mass_action_kinetic_law(kinetic_law, reaction[REACTANTS])
-
-    for compartment in model.getListOfCompartments():
-        if contains_identifier(kinetic_law.getMath(), compartment.getId()):
-            raise Exception("Kinetic law invalid for us.")
-
-
-
-
-
-def evaluate_rate(expr_rate):
-        # Merge state and parameters in a single dictionary for expression evaluation
-        local_scope = {**state, **parameters}
-
-        safe_globals = {"__builtins__": None, "pow": pow, "math": math}
-        try:
-            return eval(expr_rate, safe_globals, local_scope)
-        except:
-            raise Exception("Kinetic Law evaluation failed.")
-
-    def eval_trigger(expr_trigger):
-        # Merge state and parameters in a single dictionary for expression evaluation
-        local_scope = {**state, **parameters}
-
-        try:
-            return eval(expr_trigger, {}, local_scope)
-        except:
-            raise Exception("Trigger evaluation failed.")
-
-
-
-
-'''
+===============================================================================================
+                                    Structure AST tree
+===============================================================================================
     1 - reactant
     AST_TIMES
     ├── AST_NAME("beta")
@@ -431,4 +29,105 @@ def evaluate_rate(expr_rate):
     └── pow(SomeOther, 1)
 
     ...
-    '''
+
+===============================================================================================
+                                    ODE_simulation with chempy
+===============================================================================================
+    def get_unit_registry():
+        """Costruisce un dizionario unit_registry compatibile usando Pint."""
+        ureg = pint.UnitRegistry()
+        return {
+            'time': ureg.second,
+            'length': ureg.meter,
+            'mass': ureg.kilogram,
+            'amount': ureg.mole,
+            'temperature': ureg.kelvin,
+        }
+
+    def get_kinetic_constant(ast, kinetic_law, reactants):
+        kinetic_constant = None
+        if kinetic_law is None:
+            raise Exception("Kinetic law not set.")
+
+        if ast is None:
+            raise Exception("AST is None.")
+
+        # Always * at the root
+        if ast.getType() != libsbml.AST_TIMES:
+            raise Exception("AST's root is not TIMES(*).")
+
+        #  all child nodes (multiplicands)
+        for child in [ast.getChild(i) for i in range(ast.getNumChildren())]:
+            if child.getType() == libsbml.AST_TIMES:
+                kinetic_constant= get_kinetic_constant(child, kinetic_law, reactants)
+            elif child.getType() == libsbml.AST_NAME:  # kinetic constant
+                child_name = child.getName()
+                if child_name not in reactants:
+                    kinetic_constant = child_name
+
+        return kinetic_constant
+
+    def print_odesys(odesys):
+        odes_str = {}
+
+        symbol_map = {Symbol(f'y_{i}'): Symbol(name) for i, name in enumerate(odesys.names)}
+
+        for i, sp in enumerate(odesys.names):
+            ode_expr = odesys.exprs[i]  # sostituisci y_i con nome specie
+            odes_str[sp] = f"d[{sp}]/dt = {str(ode_expr)}"
+
+        for i, (k, v) in enumerate(symbol_map.items()):
+            for sp in odes_str:
+                odes_str[sp] = odes_str[sp].replace(str(k), str(v))
+
+        for k in odes_str:
+            print(odes_str[k])
+
+    def generate_odes(model):
+        reactions = []
+        parameters = extract_parameters(model)
+        substances = extract_species(model)
+
+        for r in model.getListOfReactions():
+            reac_stoich = {}
+            prod_stoich = {}
+
+            # Reactants
+            for reactant in r.getListOfReactants():
+                reac_stoich[reactant.getSpecies()] = reactant.getStoichiometry()
+
+            # Products
+            for product in r.getListOfProducts():
+                prod_stoich[product.getSpecies()] = product.getStoichiometry()
+
+            # Kinetic law
+            kinetic_law = r.getKineticLaw()
+            if kinetic_law is None:
+                raise Exception(f"No kinetic law for reaction: {r.getId()}")
+
+            kinetic_costant = get_kinetic_constant(kinetic_law.getMath(), kinetic_law, substances)
+
+            # Crea la reazione chempy (senza valutazione della legge cinetica)
+            r = Reaction(reac_stoich, prod_stoich, param=parameters[kinetic_costant], name=r.getId())
+            reactions.append(r)
+
+        # ODE system
+        rsys = ReactionSystem(reactions)
+        unit_registry = get_unit_registry()
+        odesys, extra = get_odesys(rsys, unit_registry)
+        print_odesys(odesys)
+
+        return odesys, parameters, substances, rsys
+
+    def simulate_odes(model):
+        odesys, parameters, species, rsys  = generate_odes(model)
+
+        if species is None:
+            raise Exception("Model has no species")
+
+        # TODO: controllare unità di misura
+
+        timepoints = np.linspace(0, 1, 1000)
+        result = odesys.integrate(timepoints, species, parameters, integrator='cvode')
+        #result.yout = np.clip(result.yout, 0, None)
+        ode_plot(result)

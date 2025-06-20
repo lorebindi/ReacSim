@@ -2,7 +2,7 @@ from Constants import *
 
 import matplotlib.pyplot as plt
 
-def plot(evolution, t_max, save_dir=None):
+def plot_gillepsie(evolution, t_max, save_dir=None):
     if evolution is None: raise Exception("Evolution is None")
     if TIME not in evolution: raise Exception("Evolution does not contain time")
     if TIME in evolution.keys() and len(evolution) == 1: raise Exception("Evolution does not contain data.")
@@ -14,7 +14,7 @@ def plot(evolution, t_max, save_dir=None):
 
     for specie in specie_names:
         valori = evolution[specie]
-        plt.plot(time_values, valori, label=specie, marker='o')
+        plt.plot(time_values, valori, label=specie)
 
     plt.xlabel("Time")
     plt.ylabel("Molecule count")
@@ -24,4 +24,19 @@ def plot(evolution, t_max, save_dir=None):
     plt.xlim(0, t_max)
     plt.ylim(bottom=0)
     plt.tight_layout()
+    plt.show()
+
+def ode_plot(result):
+
+    for i, name in enumerate(result.odesys.names):  # nomi delle specie
+        value = result.yout[:, i]
+        plt.plot(result.xout, value, label=name)
+
+    plt.xlabel("Tempo")
+    plt.ylabel("Concentrazione")
+    plt.xlim(left=0)
+    plt.ylim(bottom=0)
+    plt.legend()
+    plt.grid(True)
+    plt.title("Evoluzione delle specie nel tempo")
     plt.show()
