@@ -60,7 +60,7 @@
               <apply>
                 <power/>
                 <ci>Prey</ci>
-                <cn type="integer">1</cn>
+                <cn type="real">1</cn>
               </apply>
             </apply>
           </math>
@@ -84,7 +84,7 @@
               <apply>
                 <power/>
                 <ci>Prey</ci>
-                <cn type="integer">1</cn>
+                <cn type="real">1</cn>
               </apply>
               <apply>
                 <power/>
@@ -109,7 +109,7 @@
               <apply>
                 <power/>
                 <ci>Predator</ci>
-                <cn type="integer">1</cn>
+                <cn type="real">1</cn>
               </apply>
             </apply>
           </math>

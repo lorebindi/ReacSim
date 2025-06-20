@@ -57,7 +57,7 @@ def print_ast(node, indent=0):
     for i in range(node.getNumChildren()):
         print_ast(node.getChild(i), indent + 1)
 
-def extract_reactions(model):
+def extract_reactions(model, path_folder_csv = None):
     def validate_mass_action_kinetic_law(reactants):
         def validate_mass_action_structure(ast, kinetic_constant_found=0):
             if kinetic_law is None:
@@ -128,6 +128,29 @@ def extract_reactions(model):
 
         return traverse(math_ast)
 
+    def get_kinetic_constant(ast, reactants):
+        kinetic_constant = None
+        if kinetic_law is None:
+            raise Exception("Kinetic law not set.")
+
+        if ast is None:
+            raise Exception("AST is None.")
+
+        # Always * at the root
+        if ast.getType() != libsbml.AST_TIMES:
+            raise Exception("AST's root is not TIMES(*).")
+
+        #  all child nodes (multiplicands)
+        for child in [ast.getChild(i) for i in range(ast.getNumChildren())]:
+            if child.getType() == libsbml.AST_TIMES:
+                kinetic_constant= get_kinetic_constant(child, reactants)
+            elif child.getType() == libsbml.AST_NAME:  # kinetic constant
+                child_name = child.getName()
+                if child_name not in reactants:
+                    kinetic_constant = child_name
+
+        return kinetic_constant
+
     reactions = []
 
     for r in model.getListOfReactions():
@@ -166,6 +189,15 @@ def extract_reactions(model):
         If the kinetic law contains a compartment and the species are initially
         defined only with InitialConcentration, we simply set the compartment 
         value to 1 and use the previously computed InitialAmount values
+        '''
+
+        '''
+        Quando si valuta la costante cinetica:
+        1. Si controlla se è presente nei parametri:
+            a. se è presente nei parametri si continua.
+            b. se non è presente nei parametri si cerca il file. 
+                I. Se il file non c'è schianti
+                II. Altrimenti il valore inferito lo aggiungi a model
         '''
 
         #TODO: proviamo a non scorrere l'albero più volte ma una volta sola? Unendo:
