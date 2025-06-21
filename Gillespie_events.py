@@ -102,6 +102,8 @@ class Gillespie:
                             min_delay_time = delay_time
                         elif delay_time == min_delay_time:
                             to_eval_events.append(event)
+                else:
+                    del self.pending_event_delay[event.id]
 
             self.t = min_delay_time
 
