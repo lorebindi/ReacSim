@@ -2,7 +2,7 @@ import libsbml
 import math
 import operator
 
-TIME = '_time_'
+TIME = 'time'
 # reaction
 ID = "id"
 REACTANTS = "reactants"

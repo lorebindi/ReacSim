@@ -1,3 +1,5 @@
+import numpy as np
+
 from Constants import *
 
 import matplotlib.pyplot as plt
@@ -40,3 +42,22 @@ def ode_plot(result):
     plt.grid(True)
     plt.title("Evoluzione delle specie nel tempo")
     plt.show()
+
+'''
+def kinetic_constant_plot (x_vals, y_vals, k):
+
+    plt.figure(figsize=(8, 6))
+    plt.scatter(x_vals, y_vals, color='blue', label='Data points (v, x)')
+
+    # Create line for fitted model y = k*x
+    x_line = np.linspace(min(x_vals), max(x_vals), 100)
+    y_line = k_opt[0] * x_line
+    plt.plot(x_line, y_line, color='red', label=f'Fitted line: v = {k_opt[0]:.4f} * x')
+
+    plt.xlabel('Rate Expression (x)')
+    plt.ylabel('Reaction Rate (v)')
+    plt.title(f'Kinetic constant inference for {constant}')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+'''

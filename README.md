@@ -34,6 +34,14 @@ Support is limited to SBML files meeting the following requirements:
         </kineticLaw>
       </reaction>
 ```
+We support ONLY mass-action laws as kinetic laws. If the kinetic law is not a mass-action law, the program will abort.
+    
+If the kinetic law contains a compartment, then all species involved in the reaction MUST belong to that compartment.
+    
+If a species does not specify an InitialAmount, we ALWAYS compute it as: volume * InitialConcentration.
+
+If the kinetic law contains a compartment and the species are initially defined only with InitialConcentration, we simply set the compartment value to 1 and use the previously computed InitialAmount values.
+
 
 Please note that the `type`:
 #

@@ -26,30 +26,27 @@ import random
 '''
 
 class Gillespie:
-    def __init__(self, parsed_sbml, t_max):
+    def __init__(self, parser, t_max):
         self.t_max = t_max
-        self.t=0.0
+        self.t = 0.0
         self.pending_event_delay = {} # The set of all events with active delay
-        self.state = parsed_sbml.extract_species()
-        if self.state is None:
+        self.parser = parser
+        
+        if self.parser.species is None:
             raise Exception("Model has no species")
 
-        self.reactions = parsed_sbml.extract_reactions()
-        if self.reactions is None:
+        if self.parser.reactions is None:
             raise Exception("Model has no reactions")
 
-        self.parameters = parsed_sbml.extract_parameters()
-        if self.parameters is None:
+        if self.parser.parameters is None:
             raise Exception("Model has no parameters")
 
-        self.events = parsed_sbml.extract_events()
-
         self.evolution = {TIME: [self.t]}
-        self.evolution.update({id_specie: [amount] for id_specie,amount in self.state.items()})
+        self.evolution.update({id_specie: [amount] for id_specie,amount in self.parser.species.items()})
 
-    def evaluate_expr(self,expr, error_message, time_value, safe_globals = SAFE_GLOBALS_BASE):
+    def evaluate_expr(self, expr, error_message, time_value, safe_globals = SAFE_GLOBALS_BASE):
         # Merge state and parameters in a single dictionary for expression evaluation
-        local_scope = {**self.state, **self.parameters, "time": time_value}
+        local_scope = {**self.parser.species, **self.parser.parameters, "time": time_value}
 
         try:
             return eval(expr, safe_globals, local_scope)
@@ -57,29 +54,31 @@ class Gillespie:
             raise Exception(
                 f"{error_message} — Evaluation failed.\n"
                 f"Expression: {expr}\n")
+        
     def apply_events_assigment(self, events_assigments, values_from_trigger_time):
+        # Update the current state and parameters with the values captured at the trigger time
+        for var_ea, value_ea in values_from_trigger_time.items():
+            if var_ea in self.parser.species:
+                self.parser.species[var_ea] = value_ea
+            elif var_ea in self.parser.parameters:
+                self.parser.parameters[var_ea] = value_ea
+
         for ea in events_assigments:
             var_id = ea.getVariable()
-            # Update the current state and parameters with the values captured at the trigger time
-            for var_ea, value_ea in values_from_trigger_time.items():
-                if var_ea in self.state:
-                    self.state[var_ea] =  value_ea
-                elif var_ea in self.parameters:
-                    self.parameters[var_ea] = value_ea
             value = self.evaluate_expr(libsbml.formulaToString(ea.getMath()), ERROR_EVENT_ASSIGNMENTS, self.t)
 
             # Apply to the right variable
-            if var_id in self.state:
-                self.state[var_id] = value
-            elif var_id in self.parameters:
-                self.parameters[var_id] = value
+            if var_id in self.parser.species:
+                self.parser.species[var_id] = value
+            elif var_id in self.parser.parameters:
+                self.parser.parameters[var_id] = value
             else:
                 raise Exception(f"Cannot apply assignment to unknown variable: {var_id}")
 
     def gillespie_ssa (self):
         while self.t < self.t_max:
             propensities = []
-            for r in self.reactions:
+            for r in self.parser.reactions:
                 propensities.append(self.evaluate_expr(r[RATE_FORMULA], ERROR_KINETIC_LAW, self.t, SAFE_GLOBALS_RATE))
             a0 = sum(propensities)
             if a0 == 0:
@@ -115,7 +114,7 @@ class Gillespie:
                         del self.pending_event_delay[id_event]
 
             # Adding all the True-valuated events without delay or delay=0 at time t
-            for event in self.events:
+            for event in self.parser.events:
                 trigger_expr = event[TRIGGER_FORMULA]
                 val_trigger = self.evaluate_expr(trigger_expr, ERROR_TRIGGER, self.t) # at time t
                 # The event isn't triggered
@@ -139,10 +138,10 @@ class Gillespie:
                         # Storing the values at trigger time for the input variables used in event assignments
                         if event[USE_VALUES_FROM_TRIGGER_TIME]:
                             for key_ea in event[VALUES_FROM_TRIGGER_TIME].keys():
-                                if key_ea in self.state:
-                                    event[VALUES_FROM_TRIGGER_TIME][key_ea] = self.state[key_ea]
-                                elif key_ea in self.parameters:
-                                    event[VALUES_FROM_TRIGGER_TIME][key_ea] = self.parameters[key_ea]
+                                if key_ea in self.parser.species:
+                                    event[VALUES_FROM_TRIGGER_TIME][key_ea] = self.parser.species[key_ea]
+                                elif key_ea in self.parser.parameters:
+                                    event[VALUES_FROM_TRIGGER_TIME][key_ea] = self.parser.parameters[key_ea]
 
                         # Adding new event with delay
                         self.pending_event_delay[event[ID]] = (self.t + delay_time, event)
@@ -163,8 +162,8 @@ class Gillespie:
 
                 # Updating the evolution of species
                 self.evolution[TIME].append(self.t)
-                for s_id in self.state:
-                    self.evolution[s_id].append(self.state[s_id])
+                for s_id in self.parser.species:
+                    self.evolution[s_id].append(self.parser.species[s_id])
                 continue
 
             #Reaction choose
@@ -177,19 +176,19 @@ class Gillespie:
                     break
 
             # Update of state
-            r = self.reactions[chosen]
+            r = self.parser.reactions[chosen]
             for s, stoich in r[REACTANTS].items():
-                self.state[s] -= stoich
-                if self.state[s] < 0:
-                    self.state[s] = 0
+                self.parser.species[s] -= stoich
+                if self.parser.species[s] < 0:
+                    self.parser.species[s] = 0
             for p, stoich in r[PRODUCTS].items():
-                self.state[p] += stoich
-                if self.state[p] < 0:
-                    self.state[p] = 0
+                self.parser.species[p] += stoich
+                if self.parser.species[p] < 0:
+                    self.parser.species[p] = 0
             # Updating the evolution of species
             self.evolution[TIME].append(self.t)
-            for s_id in self.state:
-                self.evolution[s_id].append(self.state[s_id])
+            for s_id in self.parser.species:
+                self.evolution[s_id].append(self.parser.species[s_id])
 
 
     #TODO 1. trovare libreria che traduca un sistema di reazioni in un sistema di ODE
