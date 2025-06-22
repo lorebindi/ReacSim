@@ -127,7 +127,7 @@ class Reaction:
                     return file_path
         return None
 
-    def kinetic_constant_inference(self, constant):
+    def kinetic_constant_inference(self, constant, plot=true):
         '''
             Quando si valuta la costante cinetica:
             1. Si controlla se è presente nei parametri:
@@ -208,7 +208,9 @@ class Reaction:
 
         self.parser.parameters.update({constant: k_opt[0]})
 
-        #kinetic_constant_plot(df, self.reaction, self.parser.parameters)
+        if plot:
+            kinetic_constant_plot(rate_expr.values, v_avg.values, k_opt[0], constant)
+
 
     def validate_mass_action_kinetic_law(self):
         if self.kinetic_law is None:
