@@ -1,3 +1,5 @@
+import os
+
 import libsbml
 import math
 import operator
@@ -42,6 +44,11 @@ ERROR_DELAY = "Delay"
 SAFE_GLOBALS_BASE = {"__builtins__": None, "math": math}
 SAFE_GLOBALS_RATE = {**SAFE_GLOBALS_BASE,
                      "pow": pow}
+RED = "\033[91m"
+RESET = "\033[0m"
+
+GRAPH_FOLDER = os.path.join(os.path.dirname(__file__), "Graphs")
+
 '''
 SAFE_GLOBALS_TRIGGER = {**SAFE_GLOBALS_BASE,
                         # Relational

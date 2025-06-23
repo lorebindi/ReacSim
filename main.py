@@ -1,15 +1,14 @@
 # This is a sample Python script.
+import sys
 import time
 
 from Gillespie_events import *
 from Graph_generation import *
 from ODE_simulation import *
 
-T_MAX = 4
-T_MAX_EVAL = 10
+T_MAX = 12
 
-
-if __name__ == '__main__':
+'''if __name__ == '__main__':
 
     current_dir = os.path.dirname(__file__)
     file_path = os.path.join(current_dir, "Example", "Generated/lotka-volterra-event.xml")
@@ -28,8 +27,39 @@ if __name__ == '__main__':
     Gillespie.gillespie_ssa()
     evolution=Gillespie.get_evolution()
     plot_gillepsie(evolution, T_MAX) #TODO add memorization plot
-    print(f"Execution time with Gillespie: {time.time() - t:.3f}")
+    print(f"Execution time with Gillespie: {time.time() - t:.3f}")'''
 
-    '''t = time.time()
+'''t = time.time()
     simulate_odes_road_runner(file_path, T_MAX)
     print(f"Execution time ODEs: {time.time() - t:.3f}")'''
+
+if __name__ == '__main__':
+
+    current_dir = os.path.dirname(__file__)
+    test_folder = os.path.join(current_dir, "Test")
+    file_path_csv = os.path.join(current_dir, "Example", "Inference_of_kinetic_laws")
+
+    for filename in os.listdir(test_folder):
+        if filename.endswith(".xml") :
+            file_path = os.path.join(test_folder, filename)
+            print(f"\nProcessing file: {filename}")
+
+            try:
+                parser = Parser(file_path, file_path_csv)
+                t = time.time()
+                Gillespie_sim = Gillespie(parser, T_MAX)
+                Gillespie_sim.gillespie_ssa()
+                evolution = Gillespie_sim.get_evolution()
+                plot_gillepsie(evolution, T_MAX, filename[:-4])  # TODO add memorization plot
+                print(f"Execution time with Gillespie for {filename}: {time.time() - t:.3f}")
+            except Exception as e:
+                print(f"{RED}[Gillespie ERROR] {filename}: {e}{RESET}")
+
+            try:
+                # Optional ODE Simulation:
+                t = time.time()
+                simulate_odes_road_runner(file_path, T_MAX)
+                print(f"Execution time ODEs for {filename}: {time.time() - t:.3f}")
+            except Exception as e:
+                print(f"{RED}[ODEs ERROR] {filename}: {e}{RESET}")
+

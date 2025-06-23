@@ -1,8 +1,5 @@
 import os
 import pandas as pd
-import numpy as np
-from Constants import *
-import libsbml
 from Graph_generation import *
 
 class Parser:
@@ -29,8 +26,6 @@ class Parser:
             raise Exception("The file isn't level 2.")
 
         # Error checking
-        # TODO eventualmente aggiungere nei parametri della funzione il campo "inConversion=True", per abilitare la
-        #  conversione se non compatibile
         if sbml_document.checkL2v3Compatibility() > 0 and sbml_document.checkL2v4Compatibility() > 0:
             raise Exception("The file is not compatible with level 2 version 3/4")
 
@@ -64,7 +59,7 @@ class Parser:
     def extract_reactions(self):
         reactions = []
         for r in self.model.getListOfReactions():
-            reactions.append(Reaction(r, self).get_reaction_as_dict())
+            reactions.extend(Reaction(r, self).get_reaction_as_dict())
         if len(reactions) == 0: raise Exception("No reactions found.")
         return reactions
 
@@ -82,14 +77,14 @@ class Reaction:
         self.reactants = {}
         self.products = {}
         self.rate_formula = None
+        self.rate_formula_rev = None
         self.kinetic_law = None
+        self.isReversible = self.reaction.getReversible()
         self.extract_reaction()
 
     def extract_reaction(self):
         # Reactans' coefficients
-        reactants_ids = []
         for sr in self.reaction.getListOfReactants():
-            reactants_ids.append(sr.getId())  # usefull to check if the kinetic law is mass action law
             self.reactants[sr.getSpecies()] = sr.getStoichiometry()
 
         # Products' coefficients
@@ -101,20 +96,28 @@ class Reaction:
         if self.kinetic_law is None:
             raise Exception("Kinetic law not found.")
 
-        # TODO: proviamo a non scorrere l'albero più volte ma una volta sola? Unendo:
-        # - validate_mass_action_kinetic_law
-        # - contains_identifier
-        self.validate_mass_action_kinetic_law()
-
         for compartment in self.parser.model.getListOfCompartments():
             if self.contains_identifier(compartment.getId()):
                 raise Exception("Kinetic law invalid for us.")
 
-        self.rate_formula = self.kinetic_law.getFormula()
+        if not self.isReversible:
+            self.validate_mass_action_kinetic_law(self.kinetic_law.getMath())
 
-        # TODO: inferenza della legge cinetica da dati forniti tramite file csv.
-        # 1. Come diciamo quale reazione deve passare da l'inferenza?
-        # 2. Generazione punti dati da cui inferire?
+            self.rate_formula = self.kinetic_law.getFormula()
+        else:
+            ast = self.kinetic_law.getMath()
+            if ast is None:
+                raise Exception("Kinetic law not found.")
+            if ast.getType() != libsbml.AST_MINUS:
+                raise Exception("Kinetic law with reversible attribute not correct.")
+
+            ast_forward = ast.getChild(0)
+            ast_reverse = ast.getChild(1)
+            self.validate_mass_action_kinetic_law(ast_forward)
+            self.validate_mass_action_kinetic_law(ast_reverse)
+
+            self.rate_formula = libsbml.formulaToString(ast_forward)
+            self.rate_formula_rev = libsbml.formulaToString(ast_reverse)
 
     def check_file_path(self, constant):
         if self.parser.path_inference_directory is None:
@@ -127,14 +130,13 @@ class Reaction:
                     return file_path
         return None
 
-    def kinetic_constant_inference(self, constant, plot=true):
+    def kinetic_constant_inference(self, constant, plot = True):
         '''
-            Quando si valuta la costante cinetica:
-            1. Si controlla se è presente nei parametri:
-                a. se è presente nei parametri si continua.
-                b. se non è presente nei parametri si cerca il file.
-                    I. Se il file non c'è schianti
-                    II. Altrimenti il valore inferito lo aggiungi a model
+            Check if it is present in the parameters:
+                a. If it is present in the parameters, continue.
+                b. If it is not present in the parameters, look for the file.
+                    I. If the file is missing, crash.
+                    II. Otherwise, infer the value and add it to the model.
         '''
         file_path = self.check_file_path(constant)
         if file_path is None:
@@ -211,13 +213,7 @@ class Reaction:
         if plot:
             kinetic_constant_plot(rate_expr.values, v_avg.values, k_opt[0], constant)
 
-
-    def validate_mass_action_kinetic_law(self):
-        if self.kinetic_law is None:
-            raise Exception("Unable to determine mass action kinetic law.")
-
-        ast_root = self.kinetic_law.getMath()  # get the Abstract Syntax Tree (AST) of the kinetic law
-
+    def validate_mass_action_kinetic_law(self, ast_root):
         if ast_root is None:
             raise Exception("AST is None.")
 
@@ -230,9 +226,6 @@ class Reaction:
             raise Exception("Kinetic constant absent.")
 
     def validate_mass_action_structure(self, ast, kinetic_constant_found=0):
-        if self.kinetic_law is None:
-            raise Exception("Kinetic law not set.")
-
         if ast is None:
             raise Exception("AST is None.")
 
@@ -258,10 +251,12 @@ class Reaction:
                 if (
                         base.getType() != libsbml.AST_NAME or
                         base.getName() not in self.reactants or
-                        exponent.getType() not in TYPE_NUMBER or
-                        exponent.getValue() != self.reactants[base.getName()]
+                        exponent.getType() not in TYPE_NUMBER
                 ):
-                    raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
+                    if not self.isReversible and exponent.getValue() != self.reactants[base.getName()]:
+                        raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
+                    elif self.isReversible and exponent.getValue() != self.products[base.getName()]:
+                        raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
             else:
                 raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
                                 f"value: {child.getValue()}) in: {self.kinetic_law.getFormula()}")
@@ -287,18 +282,32 @@ class Reaction:
         return traverse(math_ast)
 
     def get_reaction_as_dict(self):
-        return {
-            ID: self.id,
-            REACTANTS: self.reactants,
-            PRODUCTS: self.products,
-            RATE_FORMULA: self.rate_formula
-        }
+        if not self.isReversible:
+            return [{
+                ID: self.id,
+                REACTANTS: self.reactants,
+                PRODUCTS: self.products,
+                RATE_FORMULA: self.rate_formula
+            }]
+        else:
+            return [{
+                ID: self.id,
+                REACTANTS: self.reactants,
+                PRODUCTS: self.products,
+                RATE_FORMULA: self.rate_formula
+            },
+            {
+                ID: self.id+"Rev",
+                REACTANTS: self.products,
+                PRODUCTS: self.reactants,
+                RATE_FORMULA: self.rate_formula_rev
+            } ]
 
 class Event:
     def __init__(self, event, parser):
         self.parser = parser
         self.event = event
-        self.id= event.getId()
+        self.id = event.getId()
         self.trigger_formula = {}
         self.previous = False
         self.list_of_event_assigment = []
@@ -314,11 +323,6 @@ class Event:
         # This block checks that constraint and sets a flag (use_trigger_values) to True only if the event has a delay
         # and set UseValuesFromTriggerTime to True or is not setted.
         if self.parser.model.getVersion() == 4:
-            '''
-            # Events with useValuesFromTriggerTime and without delay are not allowed
-            if not e.isSetDelay() and e.isSetUseValuesFromTriggerTime():
-                raise Exception("Is not possible having an event with useValuesFromTriggerTime attribute without the delay")
-            '''
             if self.event.isSetDelay() and self.event.getUseValuesFromTriggerTime():
                 self.use_trigger_values = True
 
@@ -333,9 +337,13 @@ class Event:
         self.trigger_formula = (libsbml.formulaToL3String(ast_trigger).replace("&&", " and ")
                                 .replace("||", " or ").replace("!", " not "))
 
-        # TODO: controllare che le variable siano tutte diverse
+        variables = []
         for event_assignment in self.event.getListOfEventAssignments():
             string_of_variable = event_assignment.getVariable()
+            if string_of_variable in variables:  # In the same event each variable MUST be different
+                raise Exception(f"Variable '{string_of_variable}' is duplicated in the event '{self.id}'.")
+            variables.append(string_of_variable)
+
             variable = self.parser.model.getElementBySId(string_of_variable)
             if variable is None:
                 raise Exception(f"Variable '{string_of_variable}' not found in model.")
@@ -352,7 +360,7 @@ class Event:
                 self.value_from_trigger_time.update(trigger_value_dict)
             self.list_of_event_assigment.append(event_assignment)
 
-        # TODO: aggiungere priority (supportata solo al livello 3)
+        # TODO: add priority (supported only at level 3)
         # if version is 3 or there isn't the Delay tag, then we append the event and terminate by evaluating the single event
         if not (self.parser.model.getVersion() == 3 or not self.event.isSetDelay()):
             delay = self.event.getDelay()
@@ -398,7 +406,7 @@ class Event:
     2. Logical comparisons and conditions using variables, constants, and operators (LT, GT, EQ, AND, OR, NOT).
     3. Use of <csymbol> time to refer to the current simulation time.
     '''
-    # TODO: estendere alle altre operazioni (TIMES, DIV) e math functions
+    # TODO: Extend to other operations (TIMES, DIV) and math functions
     def validate_event_assigment(self, ast, unit_definition_variable):
         event_assignment_input_vars = {} # store the set of variables used in the eventAssignment's Math expression
         if ast is None:
@@ -471,7 +479,7 @@ class Event:
                 if list_of_units[0].getKind() != libsbml.UNIT_KIND_SECOND:
                     raise Exception(f"Unsupported unit type for symbol '{string_of_element}'. Only second supported.")
                 return constant_found, True
-            #TODO: estendere anche a unitDefinition custom per millisecond e minutes
+            #TODO: extend to custom unitDefinitions for milliseconds and minutes
             raise Exception(f"Unsupported unit type for symbol '{string_of_element}'. Only second supported.")
 
         else:

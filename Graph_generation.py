@@ -1,10 +1,12 @@
+import os
+
 import numpy as np
 
 from Constants import *
 
 import matplotlib.pyplot as plt
 
-def plot_gillepsie(evolution, t_max, save_dir=None):
+def plot_gillepsie(evolution, t_max, filename=None):
     if evolution is None: raise Exception("Evolution is None")
     if TIME not in evolution: raise Exception("Evolution does not contain time")
     if TIME in evolution.keys() and len(evolution) == 1: raise Exception("Evolution does not contain data.")
@@ -20,12 +22,21 @@ def plot_gillepsie(evolution, t_max, save_dir=None):
 
     plt.xlabel("Time")
     plt.ylabel("Molecule count")
-    plt.title("Evolution of species over time")
+    plt.title(f"{filename}")
     plt.legend(loc="upper right")
     plt.grid(True)
     plt.xlim(0, t_max)
     plt.ylim(bottom=0)
     plt.tight_layout()
+
+    '''if GRAPH_FOLDER:
+        os.makedirs(GRAPH_FOLDER, exist_ok=True)
+        file_path = os.path.join(GRAPH_FOLDER, "gillepsie_plot.png")
+        if os.path.exists(file_path):
+            os.remove(file_path)  # Elimina il file precedente
+        plt.savefig(file_path)
+        print(f"Grafico salvato in: {file_path}")'''
+
     plt.show()
 
 def ode_plot(result):
@@ -41,6 +52,15 @@ def ode_plot(result):
     plt.legend()
     plt.grid(True)
     plt.title("Evoluzione delle specie nel tempo")
+
+    '''if GRAPH_FOLDER:
+        os.makedirs(GRAPH_FOLDER, exist_ok=True)
+        file_path = os.path.join(GRAPH_FOLDER, "ODEs_plot.png")
+        if os.path.exists(file_path):
+            os.remove(file_path)  # Elimina il file precedente
+        plt.savefig(file_path)
+        print(f"Grafico salvato in: {file_path}")'''
+
     plt.show()
 
 
@@ -60,3 +80,11 @@ def kinetic_constant_plot (x_vals, y_vals, k, constant):
     plt.legend()
     plt.grid(True)
     plt.show()
+
+    '''if GRAPH_FOLDER:
+        os.makedirs(GRAPH_FOLDER, exist_ok=True)
+        file_path = os.path.join(GRAPH_FOLDER, "kinetic_costant_plot.png")
+        if os.path.exists(file_path):
+            os.remove(file_path)  # Elimina il file precedente
+        plt.savefig(file_path)
+        print(f"Grafico salvato in: {file_path}")'''

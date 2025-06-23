@@ -25,10 +25,10 @@
 
     <!-- Specie -->
     <listOfSpecies>
-      <species id="Prey" compartment="cell" initialAmount="2"
+      <species id="Prey" compartment="cell" initialAmount="10"
                boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
                substanceUnits="item"/>
-      <species id="Predator" compartment="cell" initialAmount="1"
+      <species id="Predator" compartment="cell" initialAmount="2"
                boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
                substanceUnits="item"/>
     </listOfSpecies>
@@ -38,12 +38,12 @@
       <!-- <parameter id="alpha" value="2" constant="false" units="per_second"/> --> <!-- tasso di crescita delle prede -->
       <parameter id="beta" value="0.001" constant="false" units="per_item_second"/> <!-- tasso di successo della caccia -->
       <parameter id="gamma" value="0.001" constant="true" units="per_second"/> <!-- tasso di mortalità naturale -->
+      <parameter id="delta" value="1" constant="true" units="per_second"/>
       <parameter id="time_delay" value="0.10" constant="true" units="per_second"/> <!--  -->
     </listOfParameters>
 
      <!-- Reazioni -->
     <listOfReactions>
-
       <!-- Reazione 1:   2 Prey -> 3 Prey  (crescita della preda) -->
       <reaction id="PreyGrowth" reversible="false">
         <listOfReactants>
@@ -238,3 +238,39 @@
 
   </model>
 </sbml>
+
+<!--
+      <reaction id="PreyGrowth" reversibile="true">
+        <listOfReactants>
+          <speciesReference species="Prey" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Prey" stoichiometry="2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <minus/>
+              <apply>
+                <times/>
+                <ci>alpha</ci>
+                <apply>
+                  <power/>
+                  <ci>Prey</ci>
+                  <cn type="real">1</cn>
+                </apply>
+              </apply>
+              <apply>
+                <times/>
+                <ci>delta</ci>
+                <apply>
+                  <power/>
+                  <ci>Prey</ci>
+                  <cn type="real">2</cn>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+-->

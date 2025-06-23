@@ -1,5 +1,4 @@
 from Constants import *
-
 from Parser import *
 import math
 import random
@@ -24,6 +23,12 @@ import random
     (e.g., 1 - (check secondary trigger) - 2 - ...)
 5. Only if to_eval_events is empty, execute the reaction.
 '''
+
+# (L2V3) An important question is whether an event can be triggered at or
+# before the initial simulation time (t ≤ 0). The answer is no: events
+# can only be triggered after the simulation has started, that is, for t > 0.
+# If the trigger condition becomes false before the delay expires, the event
+# is cancelled (As if the persistent attribute of the trigger were set to True).
 
 class Gillespie:
     def __init__(self, parser, t_max):
@@ -79,7 +84,10 @@ class Gillespie:
         while self.t < self.t_max:
             propensities = []
             for r in self.parser.reactions:
-                propensities.append(self.evaluate_expr(r[RATE_FORMULA], ERROR_KINETIC_LAW, self.t, SAFE_GLOBALS_RATE))
+                propensity = self.evaluate_expr(r[RATE_FORMULA], ERROR_KINETIC_LAW, self.t, SAFE_GLOBALS_RATE)
+                if propensity < 0:
+                    raise Exception("Negative propensity is denied")
+                propensities.append(propensity)
             a0 = sum(propensities)
             if a0 == 0:
                 break
@@ -92,6 +100,8 @@ class Gillespie:
             min_delay_time = self.t + tau
             to_eval_events = []
 
+            to_remove = []
+
             for delay_time, event in self.pending_event_delay.values():
                 # evaluation of the trigger at delay_time
                 if self.evaluate_expr(event[TRIGGER_FORMULA], ERROR_TRIGGER, delay_time):
@@ -103,17 +113,24 @@ class Gillespie:
                         elif delay_time == min_delay_time:
                             to_eval_events.append(event)
                 else:
-                    del self.pending_event_delay[event.id]
+                    to_remove.append(event[ID])
+
+            for event_id in to_remove:
+                self.pending_event_delay.pop(event_id, None)
 
             self.t = min_delay_time
 
             # There are some events to evaluate
             if to_eval_events != []:
+                to_remove = []
                 for id_event, (_, event) in self.pending_event_delay.items():
                     # Delete the events whose trigger is False
                     if not self.evaluate_expr(event[TRIGGER_FORMULA], ERROR_TRIGGER, self.t):
                         event[VALUES_FROM_TRIGGER_TIME] = {}
-                        del self.pending_event_delay[id_event]
+                        to_remove.append(id_event)
+
+                for event_id in to_remove:
+                    self.pending_event_delay.pop(event_id, None)
 
             # Adding all the True-valuated events without delay or delay=0 at time t
             for event in self.parser.events:
@@ -192,15 +209,5 @@ class Gillespie:
             for s_id in self.parser.species:
                 self.evolution[s_id].append(self.parser.species[s_id])
 
-
-    #TODO 1. trovare libreria che traduca un sistema di reazioni in un sistema di ODE
-    #    2. trovare  la libreria per eseguire il sistema di ODE (es. )
-
-
-    # (L2V3) An important question is whether an event can be triggered at or
-    # before the initial simulation time (t ≤ 0). The answer is no: events
-    # can only be triggered after the simulation has started, that is, for t > 0.
-    # If the trigger condition becomes false before the delay expires, the event
-    # is cancelled (As if the persistent attribute of the trigger were set to True).
     def get_evolution(self):
         return self.evolution

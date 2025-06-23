@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Li-Ion Battery Discharge Model (SBML Level 2 Version 4)
+  Using only mass-action kinetics (no custom rate expressions)
+
+  - SoC: state of charge of the battery (0 to 1 scale)
+  - Discharge: SoC + Current -> ∅  at rate k_discharge
+  - Recharge: Charge + Electrons -> SoC at rate k_recharge
+
+  Units:
+  - hour = 3600 s
+  - per_hour = 1/hour
+-->
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
+    <model id="LiIonBattery_MassAction_PowerForm">
+
+        <!-- Unit Definitions -->
+        <listOfUnitDefinitions>
+            <unitDefinition id="hour">
+                <listOfUnits>
+                    <unit kind="second" exponent="1" multiplier="3600" scale="0"/>
+                </listOfUnits>
+            </unitDefinition>
+            <unitDefinition id="per_hour">
+                <listOfUnits>
+                    <unit kind="second" exponent="-1" multiplier="0.00027777778" scale="0"/>
+                </listOfUnits>
+            </unitDefinition>
+        </listOfUnitDefinitions>
+
+        <!-- Compartments -->
+        <listOfCompartments>
+            <compartment id="cell" size="1" constant="true"/>
+        </listOfCompartments>
+
+        <!-- Species -->
+        <listOfSpecies>
+            <species id="SoC" compartment="cell" initialAmount="1.0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+            <species id="Current" compartment="cell" initialAmount="1.0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+            <species id="Charge" compartment="cell" initialAmount="1.0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+            <species id="Electrons" compartment="cell" initialAmount="1.0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+        </listOfSpecies>
+
+        <!-- Parameters -->
+        <listOfParameters>
+            <parameter id="k_discharge" value="0.2" units="per_hour" constant="true"/>
+            <parameter id="k_recharge" value="0.05" units="per_hour" constant="true"/>
+        </listOfParameters>
+
+        <!-- Reactions -->
+        <listOfReactions>
+
+            <!-- Discharge: SoC + Current -> ∅ -->
+            <reaction id="Discharge" reversible="false">
+                <listOfReactants>
+                    <speciesReference species="SoC" stoichiometry="1"/>
+                    <speciesReference species="Current" stoichiometry="1"/>
+                </listOfReactants>
+                <kineticLaw>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <times/>
+                            <ci>k_discharge</ci>
+                            <apply>
+                                <power/>
+                                <ci>SoC</ci>
+                                <cn type="real">1</cn>
+                            </apply>
+                            <apply>
+                                <power/>
+                                <ci>Current</ci>
+                                <cn type="real">1</cn>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+
+            <!-- Recharge: Charge + Electrons -> SoC -->
+            <reaction id="Recharge" reversible="false">
+                <listOfReactants>
+                    <speciesReference species="Charge" stoichiometry="1"/>
+                    <speciesReference species="Electrons" stoichiometry="1"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="SoC" stoichiometry="1"/>
+                </listOfProducts>
+                <kineticLaw>
+                    <math xmlns="http://www.w3.org/1998/Math/MathML">
+                        <apply>
+                            <times/>
+                            <ci>k_recharge</ci>
+                            <apply>
+                                <power/>
+                                <ci>Charge</ci>
+                                <cn type="real">1</cn>
+                            </apply>
+                            <apply>
+                                <power/>
+                                <ci>Electrons</ci>
+                                <cn type="real">1</cn>
+                            </apply>
+                        </apply>
+                    </math>
+                </kineticLaw>
+            </reaction>
+
+        </listOfReactions>
+
+    </model>
+</sbml>
