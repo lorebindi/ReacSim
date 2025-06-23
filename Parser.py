@@ -53,7 +53,7 @@ class Parser:
 
     def extract_parameters(self):
         parameters = {p.getId(): p.getValue() for p in self.model.getListOfParameters()}
-        parameters.update({c.getId(): 1.0 for c in self.model.getListOfCompartments()})
+        #parameters.update({c.getId(): 1.0 for c in self.model.getListOfCompartments()})
         return parameters
 
     def extract_reactions(self):
