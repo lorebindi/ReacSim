@@ -42,6 +42,8 @@ class Parser:
                 species[s.getId()] = s.getInitialAmount()
             elif s.isSetInitialConcentration():  # We have to do: amount = volume * InitialConcetrantion.
                 compartment = self.model.getCompartment(s.getCompartment())
+                if not compartment.isSetSize():
+                    raise Exception("The size compartment is not set.")
                 volume = compartment.getSize()
                 try:
                     species[s.getId()] = volume * s.getInitialConcentration()
