@@ -4,16 +4,16 @@
 
     <!-- Definizione delle unità -->
     <listOfUnitDefinitions>
-      <unitDefinition id="per_second">
+      <unitDefinition id="per_day">
         <listOfUnits>
-          <unit kind="second" exponent="-1"/>
+          <unit kind="second" multiplier="86400" scale="0" exponent="1"/>
         </listOfUnits>
       </unitDefinition>
 
-      <unitDefinition id="per_item_second">
+      <unitDefinition id="per_item_day">
         <listOfUnits>
           <unit kind="item" exponent="-1"/>
-          <unit kind="second" exponent="-1"/>
+          <unit kind="second" multiplier="86400" exponent="-1"/>
         </listOfUnits>
       </unitDefinition>
 
@@ -38,9 +38,9 @@
 
     <!-- Parametri -->
     <listOfParameters>
-      <parameter id="beta" value="0.01" constant="false" units="per_item_second"/> <!-- coefficiente di infezione -->
-      <parameter id="gamma" value="0.2" constant="true" units="per_second"/> <!-- coefficiente di recupero -->
-      <parameter id="time_delay" value="0.10" constant="true" units="per_second"/> <!--  -->
+      <parameter id="beta" value="0.01" constant="false" units="per_item_day"/> <!-- coefficiente di infezione -->
+      <parameter id="gamma" value="0.2" constant="true" units="per_day"/> <!-- coefficiente di recupero -->
+      <parameter id="time_delay" value="0.10" constant="true" units="per_day"/> <!--  -->
     </listOfParameters>
 
     <listOfReactions>
