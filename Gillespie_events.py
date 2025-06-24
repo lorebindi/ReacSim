@@ -60,7 +60,7 @@ class Gillespie:
                 f"{error_message} — Evaluation failed.\n"
                 f"Expression: {expr}\n")
         
-    def apply_events_assigment(self, events_assigments, values_from_trigger_time):
+    def apply_events_assigment(self, event_id, events_assigments, values_from_trigger_time):
         # Update the current state and parameters with the values captured at the trigger time
         for var_ea, value_ea in values_from_trigger_time.items():
             if var_ea in self.parser.species:
@@ -71,6 +71,9 @@ class Gillespie:
         for ea in events_assigments:
             var_id = ea.getVariable()
             value = self.evaluate_expr(libsbml.formulaToString(ea.getMath()), ERROR_EVENT_ASSIGNMENTS, self.t)
+
+            if value < 0:
+                raise Exception(f"Impossible to do apply the event {event_id}")
 
             # Apply to the right variable
             if var_id in self.parser.species:
@@ -177,7 +180,7 @@ class Gillespie:
                     if self.evaluate_expr(event[TRIGGER_FORMULA], ERROR_TRIGGER, self.t):
                         # event[VALUES_FROM_TRIGGER_TIME] may be {} if eventAssigment use only constant or if
                         # useValuesFromTriggerTime="false"
-                        self.apply_events_assigment(event[LIST_OF_EVENT_ASSIGMENT], event[VALUES_FROM_TRIGGER_TIME])
+                        self.apply_events_assigment(event[ID], event[LIST_OF_EVENT_ASSIGMENT], event[VALUES_FROM_TRIGGER_TIME])
 
                 # Updating the evolution of species
                 self.evolution[TIME].append(self.t)
@@ -185,7 +188,7 @@ class Gillespie:
                     self.evolution[s_id].append(self.parser.species[s_id])
                 continue
 
-            #Reaction choose
+            #Reaction choose between 0 and a0
             n = random.random() * a0
             cumulative = 0.0
             for i, a in enumerate(propensities):

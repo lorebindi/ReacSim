@@ -64,7 +64,7 @@ def ode_plot(result):
     plt.show()
 
 
-def kinetic_constant_plot (x_vals, y_vals, k, constant):
+def stochastic_rate_constant_plot (x_vals, y_vals, k, constant):
 
     plt.figure(figsize=(8, 6))
     plt.scatter(x_vals, y_vals, color='blue', label='Data points $(v(\\Delta t),\ x(\\Delta t))$')
@@ -76,7 +76,7 @@ def kinetic_constant_plot (x_vals, y_vals, k, constant):
 
     plt.xlabel('Mass Action Term (x)')
     plt.ylabel('Reaction Rate (v)')
-    plt.title(f'Kinetic constant inference for {constant}')
+    plt.title(f'Stochastic rate constant inference for {constant}')
     plt.legend()
     plt.grid(True)
     plt.show()

@@ -131,3 +131,17 @@
         result = odesys.integrate(timepoints, species, parameters, integrator='cvode')
         #result.yout = np.clip(result.yout, 0, None)
         ode_plot(result)
+
+===============================================================================================
+                                  Condizione in extract_species
+===============================================================================================
+
+elif s.isSetInitialConcentration():  # We have to do: amount = volume * InitialConcetrantion.
+    compartment = self.model.getCompartment(s.getCompartment())
+    if not compartment.isSetSize():
+        raise Exception("The size compartment is not set.")
+    volume = compartment.getSize()
+    try:
+        species[s.getId()] = volume * s.getInitialConcentration()
+    except TypeError:  # Example: value * None
+        raise Exception("Unable to extract InitialAmount from InitialConcentration.")

@@ -25,7 +25,7 @@
 
     <!-- Specie -->
     <listOfSpecies>
-      <species id="Susceptible" compartment="cell" initialConcentration="20"
+      <species id="Susceptible" compartment="cell" initialAmount="20"
                boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
                substanceUnits="item"/>
       <species id="Infected" compartment="cell" initialAmount="12"

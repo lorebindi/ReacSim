@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 from Graph_generation import *
 
@@ -38,19 +37,12 @@ class Parser:
     def extract_species(self):
         species = {}
         for s in self.model.getListOfSpecies():
-            if s.isSetInitialAmount():  # We have the absolute initial amount.
+            if s.isSetInitialAmount() and not s.isSetInitialConcentration():  # We have the absolute initial amount.
                 species[s.getId()] = s.getInitialAmount()
-            elif s.isSetInitialConcentration():  # We have to do: amount = volume * InitialConcetrantion.
-                compartment = self.model.getCompartment(s.getCompartment())
-                if not compartment.isSetSize():
-                    raise Exception("The size compartment is not set.")
-                volume = compartment.getSize()
-                try:
-                    species[s.getId()] = volume * s.getInitialConcentration()
-                except TypeError:  # Example: value * None
-                    raise Exception("Unable to extract InitialAmount from InitialConcentration.")
             else:
-                raise Exception("Neither InitialAmount nor InitialConcentration are set.")
+                if s.isSetInitialConcentration():
+                    raise Exception("Initial Concentration cannot be set.")
+                raise Exception("InitialAmount are not set.")
         return species
 
     def extract_parameters(self):
@@ -132,7 +124,7 @@ class Reaction:
                     return file_path
         return None
 
-    def kinetic_constant_inference(self, constant, plot = True):
+    def stochastic_rate_constant_inference(self, constant, plot = True):
         '''
             Check if it is present in the parameters:
                 a. If it is present in the parameters, continue.
@@ -208,26 +200,26 @@ class Reaction:
 
         if k_opt[0] < 0:
             raise ValueError(
-                f"Estimated kinetic constant is negative: {k_opt[0]}. Check experimental data or model assumptions.")
+                f"Estimated stochastic rate constant is negative: {k_opt[0]}. Check experimental data or model assumptions.")
 
         self.parser.parameters.update({constant: k_opt[0]})
 
         if plot:
-            kinetic_constant_plot(rate_expr.values, v_avg.values, k_opt[0], constant)
+            stochastic_rate_constant_plot(rate_expr.values, v_avg.values, k_opt[0], constant)
 
     def validate_mass_action_kinetic_law(self, ast_root):
         if ast_root is None:
             raise Exception("AST is None.")
 
         # If the reaction is a synthesis (  -> something) then the kinetic law is equal
-        # to the kinetic constant
+        # to the stochastic rate constant
         if ast_root.getType() == libsbml.AST_NAME:
             return
 
         if self.validate_mass_action_structure(ast_root) == 0:
-            raise Exception("Kinetic constant absent.")
+            raise Exception("Stochastic rate constant absent.")
 
-    def validate_mass_action_structure(self, ast, kinetic_constant_found=0):
+    def validate_mass_action_structure(self, ast, stochastic_rate_constant_found=0):
         if ast is None:
             raise Exception("AST is None.")
 
@@ -238,15 +230,15 @@ class Reaction:
         #  all child nodes (multiplicands)
         for child in [ast.getChild(i) for i in range(ast.getNumChildren())]:
             if child.getType() == libsbml.AST_TIMES:
-                kinetic_constant_found = self.validate_mass_action_structure(child, kinetic_constant_found)
+                stochastic_rate_constant_found = self.validate_mass_action_structure(child, stochastic_rate_constant_found)
                 # There must be at least one parameter (rate constant)
-                if kinetic_constant_found > 1:
-                    raise Exception("Too many kinetic constant.")
-            elif child.getType() == libsbml.AST_NAME:  # kinetic constant
-                kinetic_constant_found += 1
-                # Check if the kinetic constant should be inferred
+                if stochastic_rate_constant_found > 1:
+                    raise Exception("Too many stochastic rate constant.")
+            elif child.getType() == libsbml.AST_NAME:  # stochastic rate constant
+                stochastic_rate_constant_found += 1
+                # Check if the stochastic rate constant should be inferred
                 if child.getName() not in self.parser.parameters:
-                    self.kinetic_constant_inference(child.getName())
+                    self.stochastic_rate_constant_inference(child.getName())
             elif child.getType() == libsbml.AST_FUNCTION_POWER:
                 base = child.getChild(0)
                 exponent = child.getChild(1)
@@ -263,7 +255,7 @@ class Reaction:
                 raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
                                 f"value: {child.getValue()}) in: {self.kinetic_law.getFormula()}")
 
-        return kinetic_constant_found
+        return stochastic_rate_constant_found
 
     def contains_identifier(self, target_id):
         math_ast = self.kinetic_law.getMath()
@@ -446,7 +438,7 @@ class Event:
     '''
     Validates <delay> expressions to ensure they:
     1. The expression inside the <math> block evaluate to a duration in seconds, 
-        which must match the model's time units without providing any unit conversion.
+        which must match the model's time units.
     2. The expression must consist only of a single parameter or mathematical 
         operations (only SUM and MINUS) involving parameters and/or numerical 
         constants—no complex expressions or unsupported constructs are allowed.
