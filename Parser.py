@@ -46,11 +46,13 @@ class Parser:
     def extract_species(self):
         species = {}
         for s in self.model.getListOfSpecies():
-            if s.isSetInitialAmount() and not s.isSetInitialConcentration():  # We have the absolute initial amount.
+            if s.isSetInitialAmount() and not s.isSetInitialConcentration() and s.getHasOnlySubstanceUnits:  # We have the absolute initial amount.
                 species[s.getId()] = s.getInitialAmount()
             else:
                 if s.isSetInitialConcentration():
                     raise Exception("Initial Concentration cannot be set.")
+                if not s.hasOnlySubstanceUnits:
+                    raise Exception("Substance units cannot be unset.")
                 raise Exception("InitialAmount are not set.")
         return species
 
@@ -219,7 +221,6 @@ class Reaction:
     def validate_mass_action_kinetic_law(self, ast_root):
         if ast_root is None:
             raise Exception("AST is None.")
-
         # If the reaction is a synthesis (  -> something) then the kinetic law is equal
         # to the stochastic rate constant
         if ast_root.getType() == libsbml.AST_NAME:
@@ -419,9 +420,7 @@ class Event:
         event_assignment_input_vars = {} # store the set of variables used in the eventAssignment's Math expression
         if ast is None:
             raise Exception("AST is None.")
-        if ast.getType() in constants.TYPE_NUMBER: # variable = constant
-            pass
-        elif ast.getType() == libsbml.AST_NAME:
+        if ast.getType() == libsbml.AST_NAME:
             string_of_element = ast.getName()
             if self.use_trigger_values:
                 event_assignment_input_vars[string_of_element] = None
@@ -439,7 +438,7 @@ class Event:
             if not libsbml.UnitDefinition.areEquivalent(self.parser.model.getUnitDefinition(element.getUnits()),
                                                         unit_definition_variable):
                 raise Exception(f"Unit mismatch: '{string_of_element}' has units different from assigned variable.")
-        else:
+        elif ast.getType() not in constants.TYPE_NUMBER:
             if ast.getType() not in constants.TYPE_OP:
                 raise Exception("Only AST_PLUS and AST_MINUS are supported in the EventAssigment.")
 
