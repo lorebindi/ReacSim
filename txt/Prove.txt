@@ -145,3 +145,34 @@ elif s.isSetInitialConcentration():  # We have to do: amount = volume * InitialC
         species[s.getId()] = volume * s.getInitialConcentration()
     except TypeError:  # Example: value * None
         raise Exception("Unable to extract InitialAmount from InitialConcentration.")
+
+
+===============================================================================================
+                                  plot del ODE
+===============================================================================================
+
+
+def ode_plot(result, filename):
+
+    for i, name in enumerate(result.odesys.names):  # nomi delle specie
+        value = result.yout[:, i]
+        plt.plot(result.xout, value, label=name)
+
+    plt.xlabel("Tempo")
+    plt.ylabel("Concentrazione")
+    plt.title(f"{filename}")
+    plt.xlim(left=0)
+    plt.ylim(bottom=0)
+    plt.legend()
+    plt.grid(True)
+    plt.title("Evoluzione delle specie nel tempo")
+
+    ''''''if GRAPH_FOLDER:
+        os.makedirs(GRAPH_FOLDER, exist_ok=True)
+        file_path = os.path.join(GRAPH_FOLDER, "ODEs_plot.png")
+        if os.path.exists(file_path):
+            os.remove(file_path)  # Elimina il file precedente
+        plt.savefig(file_path)
+        print(f"Grafico salvato in: {file_path}")''''''
+
+    plt.show()

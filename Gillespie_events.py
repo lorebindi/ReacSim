@@ -1,8 +1,10 @@
-from Constants import *
-from Parser import *
+# Librerie standard
 import math
 import random
 
+# Moduli locali
+from Constants import *
+from Parser import *
 
 '''
 1. Calculate τ (tau).
@@ -101,8 +103,8 @@ class Gillespie:
 
             # Select delay events
             min_delay_time = self.t + tau
-            to_eval_events = []
 
+            to_eval_events = []
             to_remove = []
 
             for delay_time, event in self.pending_event_delay.values():

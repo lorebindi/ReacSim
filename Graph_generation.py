@@ -1,9 +1,6 @@
 import os
-
 import numpy as np
-
 from Constants import *
-
 import matplotlib.pyplot as plt
 
 def plot_gillepsie(evolution, t_max, filename=None):
@@ -39,29 +36,39 @@ def plot_gillepsie(evolution, t_max, filename=None):
 
     plt.show()
 
-def ode_plot(result):
+def ode_plot(rr, t_max, filename, show=True):
 
-    for i, name in enumerate(result.odesys.names):  # nomi delle specie
-        value = result.yout[:, i]
-        plt.plot(result.xout, value, label=name)
+    import pylab as p
 
-    plt.xlabel("Tempo")
-    plt.ylabel("Concentrazione")
-    plt.xlim(left=0)
-    plt.ylim(bottom=0)
-    plt.legend()
-    plt.grid(True)
-    plt.title("Evoluzione delle specie nel tempo")
+    result = rr.getSimulationData()
 
-    '''if GRAPH_FOLDER:
-        os.makedirs(GRAPH_FOLDER, exist_ok=True)
-        file_path = os.path.join(GRAPH_FOLDER, "ODEs_plot.png")
-        if os.path.exists(file_path):
-            os.remove(file_path)  # Elimina il file precedente
-        plt.savefig(file_path)
-        print(f"Grafico salvato in: {file_path}")'''
+    if result is None:
+        raise Exception("no simulation result")
 
-    plt.show()
+    # assume result is a standard numpy array
+
+    selections = rr.timeCourseSelections
+
+    if len(result.shape) != 2 or result.shape[1] != len(selections):
+        raise Exception("simulation result columns not equal to number of selections,"
+                        "likely a simulation has not been run")
+
+    times = result[:,0]
+
+    for i in range(1, len(selections)):
+        series = result[:,i]
+        name = selections[i]
+        p.plot(times, series, label=str(name))
+
+        p.legend()
+
+    p.grid(True)
+    p.xlim(0, t_max)
+    p.title(f"{filename}")
+    p.tight_layout()
+
+    if show:
+        p.show()
 
 
 def stochastic_rate_constant_plot (x_vals, y_vals, k, constant):

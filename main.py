@@ -6,7 +6,7 @@ from Gillespie_events import *
 from Graph_generation import *
 from ODE_simulation import *
 
-T_MAX = 12
+T_MAX = 5
 
 '''if __name__ == '__main__':
 
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     file_path_csv = os.path.join(current_dir, "Example", "Inference_of_kinetic_laws")
 
     for filename in os.listdir(test_folder):
-        if filename.endswith(".xml") :
+        if filename.endswith(".xml") and filename[:-4] == "lotka_volterra_p_1":
             file_path = os.path.join(test_folder, filename)
             print(f"\nProcessing file: {filename}")
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
             try:
                 # Optional ODE Simulation:
                 t = time.time()
-                simulate_odes_road_runner(file_path, T_MAX)
+                simulate_odes_road_runner(file_path, T_MAX, filename[:-4])
                 print(f"Execution time ODEs for {filename}: {time.time() - t:.3f}")
             except Exception as e:
                 print(f"{RED}[ODEs ERROR] {filename}: {e}{RESET}")

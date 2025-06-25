@@ -1,5 +1,14 @@
+# Librerie standard
+import os
+
+# Librerie di terze parti
+import libsbml
+import numpy as np
 import pandas as pd
-from Graph_generation import *
+
+# Moduli locali
+import Constants as constants
+import Graph_generation as graphgen
 
 class Parser:
     def __init__(self, file_name, path_inference_directory = None):
@@ -147,7 +156,7 @@ class Reaction:
         # There must be at least one specie of the reaction in the file and the time.
         species_in_csv = df.columns
         num_of_species_in_csv = 0
-        if TIME not in species_in_csv:
+        if constants.TIME not in species_in_csv:
             raise Exception("Missing time column in csv.")
         for species in stoich_reactants.keys():
             if species in species_in_csv:
@@ -159,7 +168,7 @@ class Reaction:
             raise Exception("No species found in csv.")
 
         # Compute time differences between rows
-        delta_t = df[TIME].diff().iloc[1:]
+        delta_t = df[constants.TIME].diff().iloc[1:]
 
         v_t_list = []
 
@@ -205,7 +214,7 @@ class Reaction:
         self.parser.parameters.update({constant: k_opt[0]})
 
         if plot:
-            stochastic_rate_constant_plot(rate_expr.values, v_avg.values, k_opt[0], constant)
+            graphgen.stochastic_rate_constant_plot(rate_expr.values, v_avg.values, k_opt[0], constant)
 
     def validate_mass_action_kinetic_law(self, ast_root):
         if ast_root is None:
@@ -245,7 +254,7 @@ class Reaction:
                 if (
                         base.getType() != libsbml.AST_NAME or
                         base.getName() not in self.reactants or
-                        exponent.getType() not in TYPE_NUMBER
+                        exponent.getType() not in constants.TYPE_NUMBER
                 ):
                     if not self.isReversible and exponent.getValue() != self.reactants[base.getName()]:
                         raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
@@ -278,23 +287,23 @@ class Reaction:
     def get_reaction_as_dict(self):
         if not self.isReversible:
             return [{
-                ID: self.id,
-                REACTANTS: self.reactants,
-                PRODUCTS: self.products,
-                RATE_FORMULA: self.rate_formula
+                constants.ID: self.id,
+                constants.REACTANTS: self.reactants,
+                constants.PRODUCTS: self.products,
+                constants.RATE_FORMULA: self.rate_formula
             }]
         else:
             return [{
-                ID: self.id,
-                REACTANTS: self.reactants,
-                PRODUCTS: self.products,
-                RATE_FORMULA: self.rate_formula
+                constants.ID: self.id,
+                constants.REACTANTS: self.reactants,
+                constants.PRODUCTS: self.products,
+                constants.RATE_FORMULA: self.rate_formula
             },
             {
-                ID: self.id+"Rev",
-                REACTANTS: self.products,
-                PRODUCTS: self.reactants,
-                RATE_FORMULA: self.rate_formula_rev
+                constants.ID: self.id+"Rev",
+                constants.REACTANTS: self.products,
+                constants.PRODUCTS: self.reactants,
+                constants.RATE_FORMULA: self.rate_formula_rev
             } ]
 
 class Event:
@@ -330,6 +339,7 @@ class Event:
         self.validate_trigger_boolean_expr(ast_trigger)
         self.trigger_formula = (libsbml.formulaToL3String(ast_trigger).replace("&&", " and ")
                                 .replace("||", " or ").replace("!", " not "))
+        self.previous = self.evaluate_expr(self.trigger_formula, constants.ERROR_TRIGGER, 0)
 
         variables = []
         for event_assignment in self.event.getListOfEventAssignments():
@@ -340,7 +350,11 @@ class Event:
 
             variable = self.parser.model.getElementBySId(string_of_variable)
             if variable is None:
-                raise Exception(f"Variable '{string_of_variable}' not found in model.")
+                variable = self.parser.parameters[string_of_variable]
+                if variable is None:
+                    raise Exception(f"Variable '{string_of_variable}' not found in model.")
+                else:
+                    raise Exception(f"Variable '{string_of_variable}' not found in model but it was inferred.")
 
             # Ottieni l'attributo 'units' dalla variabile (solo se esiste)
             unit_id = variable.getUnits() if variable.isSetUnits() else None
@@ -378,17 +392,17 @@ class Event:
         if ast is None:
             raise Exception("AST is None.")
 
-        if ast.getType() not in TYPE_TRIGGER:
+        if ast.getType() not in constants.TYPE_TRIGGER:
             raise Exception("AST must be logical or relational operator.")
 
         for child in [ast.getChild(i) for i in range(ast.getNumChildren())]:
-            if child.getType() in TYPE_TRIGGER:
+            if child.getType() in constants.TYPE_TRIGGER:
                 self.validate_trigger_boolean_expr(child)
             elif child.getType() == libsbml.AST_NAME:
                 if not self.is_valid_identifier(child.getName()):
                     raise Exception("Invalid identifier.")
                 return
-            elif child.getType() in TYPE_NUMBER or child.getType() == libsbml.AST_NAME_TIME:
+            elif child.getType() in constants.TYPE_NUMBER or child.getType() == libsbml.AST_NAME_TIME:
                 return
             else:
                 raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "
@@ -405,7 +419,7 @@ class Event:
         event_assignment_input_vars = {} # store the set of variables used in the eventAssignment's Math expression
         if ast is None:
             raise Exception("AST is None.")
-        if ast.getType() in TYPE_NUMBER: # variable = constant
+        if ast.getType() in constants.TYPE_NUMBER: # variable = constant
             pass
         elif ast.getType() == libsbml.AST_NAME:
             string_of_element = ast.getName()
@@ -415,7 +429,7 @@ class Event:
             if element is None:
                 raise Exception(f"Symbol '{string_of_element}' not found in model.")
 
-            if element.getTypeCode() not in TYPE_CODE: # element != (Species, Parameter, Compartment))
+            if element.getTypeCode() not in constants.TYPE_CODE: # element != (Species, Parameter, Compartment))
                 raise Exception(f"Unsupported element type for symbol '{string_of_element}'")
 
             if not element.isSetUnits():
@@ -426,7 +440,7 @@ class Event:
                                                         unit_definition_variable):
                 raise Exception(f"Unit mismatch: '{string_of_element}' has units different from assigned variable.")
         else:
-            if ast.getType() not in TYPE_OP:
+            if ast.getType() not in constants.TYPE_OP:
                 raise Exception("Only AST_PLUS and AST_MINUS are supported in the EventAssigment.")
 
             for i in range(ast.getNumChildren()):
@@ -446,7 +460,7 @@ class Event:
     def validate_delay(self, ast, constant_found = False, parameter_found = False):
         if ast is None:
             raise Exception("AST is None.")
-        if ast.getType() in TYPE_NUMBER: # variable = constant
+        if ast.getType() in constants.TYPE_NUMBER: # variable = constant
             return True, parameter_found
         elif ast.getType() == libsbml.AST_NAME:
             string_of_element = ast.getName()
@@ -477,7 +491,7 @@ class Event:
             raise Exception(f"Unsupported unit type for symbol '{string_of_element}'. Only second supported.")
 
         else:
-            if ast.getType() not in TYPE_OP:
+            if ast.getType() not in constants.TYPE_OP:
                 raise Exception("Only AST_PLUS and AST_MINUS are supported in the EventAssigment.")
 
             for i in range(ast.getNumChildren()):
@@ -487,13 +501,24 @@ class Event:
 
             return constant_found, parameter_found
 
+    def evaluate_expr(self, expr, error_message, time_value, safe_globals = constants.SAFE_GLOBALS_BASE):
+        # Merge state and parameters in a single dictionary for expression evaluation
+        local_scope = {**self.parser.species, **self.parser.parameters, "time": time_value}
+
+        try:
+            return eval(expr, safe_globals, local_scope)
+        except:
+            raise Exception(
+                f"{error_message} — Evaluation failed.\n"
+                f"Expression: {expr}\n")
+
     def get_event_as_dict(self):
         return {
-            ID: self.id,
-            TRIGGER_FORMULA: self.trigger_formula,
-            PREVIOUS: self.previous,    # Value of trigger at t-tau (previous value)
-            LIST_OF_EVENT_ASSIGMENT: self.list_of_event_assigment,
-            DELAY_FORMULA: self.delay_formula,
-            USE_VALUES_FROM_TRIGGER_TIME: self.use_values_from_trigger_time,
-            VALUES_FROM_TRIGGER_TIME: self.value_from_trigger_time
+            constants.ID: self.id,
+            constants.TRIGGER_FORMULA: self.trigger_formula,
+            constants.PREVIOUS: self.previous,    # Value of trigger at t-tau (previous value)
+            constants.LIST_OF_EVENT_ASSIGMENT: self.list_of_event_assigment,
+            constants.DELAY_FORMULA: self.delay_formula,
+            constants.USE_VALUES_FROM_TRIGGER_TIME: self.use_values_from_trigger_time,
+            constants.VALUES_FROM_TRIGGER_TIME: self.value_from_trigger_time
         }

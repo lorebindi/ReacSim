@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
+  <model id="SIR">
+
+    <!-- Attivazione e disattivazione del lockdown senza vaccinazioni -->
+
+    <!-- Definizione delle unità -->
+    <listOfUnitDefinitions>
+      <unitDefinition id="per_day">
+        <listOfUnits>
+          <unit kind="second" multiplier="86400" scale="0" exponent="1"/>
+        </listOfUnits>
+      </unitDefinition>
+
+      <unitDefinition id="per_item_day">
+        <listOfUnits>
+          <unit kind="item" exponent="-1"/>
+          <unit kind="second" multiplier="86400" exponent="-1"/>
+        </listOfUnits>
+      </unitDefinition>
+
+    </listOfUnitDefinitions>
+
+    <listOfCompartments>
+      <compartment id="cell" size="1" constant="true" />
+    </listOfCompartments>
+
+    <!-- Specie -->
+    <listOfSpecies>
+      <species id="Susceptible" compartment="cell" initialAmount="30"
+               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
+               substanceUnits="item"/>
+      <species id="Infected" compartment="cell" initialAmount="12"
+               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
+               substanceUnits="item"/>
+      <species id="Recovered" compartment="cell" initialAmount="3"
+               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
+               substanceUnits="item"/>
+    </listOfSpecies>
+
+    <!-- Parametri -->
+    <listOfParameters>
+      <parameter id="beta" value="0.5" constant="false" units="per_item_day"/> <!-- coefficiente di infezione -->
+      <parameter id="gamma" value="0.2" constant="true" units="per_day"/> <!-- coefficiente di recupero -->
+      <parameter id="time_delay" value="0.10" constant="true" units="per_day"/> <!--  -->
+    </listOfParameters>
+
+    <listOfReactions>
+      <!-- 1Susceptible + 1Infected -> 2Infected -->
+      <reaction id="infection" reversible="false">
+        <listOfReactants>
+          <speciesReference species="Susceptible" stoichiometry="1"/>
+          <speciesReference species="Infected" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Infected" stoichiometry="2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>beta</ci>
+              <apply>
+                <power/>
+                <ci>Susceptible</ci>
+                <cn type="real">1</cn>
+              </apply>
+              <apply>
+                <power/>
+                <ci>Infected</ci>
+                <cn type="real">1</cn>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <!-- 1Infected -> 1Recovered -->
+      <reaction id="recovery" reversible="false">
+        <listOfReactants>
+          <speciesReference species="Infected" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Recovered" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> gamma </ci>
+              <apply>
+                <power/>
+                <ci>Infected</ci>
+                <cn type="real">1</cn>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+    <listOfEvents>
+      <event id="lockdown">
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <gt/>
+              <ci>Infected</ci>
+              <cn type="real">30</cn>
+            </apply>
+          </math>
+        </trigger>
+        <listOfEventAssignments>
+          <eventAssignment variable="beta">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn type="real">0.002</cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+        <event id="noLockdown">
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <lt/>
+              <ci>Infected</ci>
+              <cn type="real">10</cn>
+            </apply>
+          </math>
+        </trigger>
+        <listOfEventAssignments>
+          <eventAssignment variable="beta">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn type="real">5.0</cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+    </event>
+    </listOfEvents>
+
+  </model>
+</sbml>

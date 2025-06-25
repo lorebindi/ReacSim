@@ -40,7 +40,7 @@
 
     <!-- Parametri -->
     <listOfParameters>
-      <!-- <parameter id="alpha" value="2" constant="false" units="per_second"/> --> <!-- tasso di crescita delle prede -->
+      <parameter id="alpha" value="2" constant="false" units="per_second"/> <!-- tasso di crescita delle prede -->
       <parameter id="beta" value="0.001" constant="false" units="per_item_day"/> <!-- tasso di successo della caccia -->
       <parameter id="gamma" value="0.001" constant="true" units="per_day"/> <!-- tasso di mortalità naturale -->
       <parameter id="delta" value="1" constant="true" units="per_day"/>
@@ -99,7 +99,7 @@
             </apply>
           </math>
         </kineticLaw>
-      </reaction> -->
+      </reaction>-->
 
       <!-- Reazione 3: 1 Predator ->   (morte del predatore) -->
       <!--<reaction id="PredatorDeath" reversible="false">
@@ -130,26 +130,16 @@
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
-              <lt/>
-              <ci>Prey</ci>
-              <cn type="integer">10</cn>
+              <gt/>
+              <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+              <cn type="integer"></cn>
             </apply>
           </math>
         </trigger>
-         <delay>
-          <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <ci>time_delay</ci>
-          </math>
-        </delay>
         <listOfEventAssignments>
           <eventAssignment variable="Prey">
             <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <cn type="integer">50</cn>
-            </math>
-          </eventAssignment>
-          <eventAssignment variable="Predator">
-            <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <cn type="integer">10</cn>
+              <cn type="integer">2</cn>
             </math>
           </eventAssignment>
         </listOfEventAssignments>

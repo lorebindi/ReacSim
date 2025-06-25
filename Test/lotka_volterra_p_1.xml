@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
-  <model id="SIR">
+  <model id="LotkaVolterra">
 
     <!-- Definizione delle unità -->
     <listOfUnitDefinitions>
@@ -16,7 +16,6 @@
           <unit kind="second" multiplier="86400" exponent="-1"/>
         </listOfUnits>
       </unitDefinition>
-
     </listOfUnitDefinitions>
 
     <listOfCompartments>
@@ -25,33 +24,55 @@
 
     <!-- Specie -->
     <listOfSpecies>
-      <species id="Susceptible" compartment="cell" initialAmount="20"
+      <species id="Prey" compartment="cell" initialAmount="20"
                boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
                substanceUnits="item"/>
-      <species id="Infected" compartment="cell" initialAmount="12"
-               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
-               substanceUnits="item"/>
-      <species id="Recovered" compartment="cell" initialAmount="3"
+      <species id="Predator" compartment="cell" initialAmount="4"
                boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
                substanceUnits="item"/>
     </listOfSpecies>
 
     <!-- Parametri -->
     <listOfParameters>
-      <parameter id="beta" value="0.01" constant="false" units="per_item_day"/> <!-- coefficiente di infezione -->
-      <parameter id="gamma" value="0.2" constant="true" units="per_day"/> <!-- coefficiente di recupero -->
+      <parameter id="alpha" value="0.0018" constant="false" units="per_day"/> <!-- tasso di crescita delle prede -->
+      <parameter id="beta" value="0.01" constant="false" units="per_item_day"/> <!-- tasso di successo della caccia -->
+      <parameter id="gamma" value="0.2" constant="true" units="per_day"/> <!-- tasso di mortalità naturale -->
       <parameter id="time_delay" value="0.10" constant="true" units="per_day"/> <!--  -->
     </listOfParameters>
 
+     <!-- Reazioni -->
     <listOfReactions>
-      <!-- 1Susceptible + 1Infected -> 2Infected -->
-      <reaction id="infection" reversible="false">
+      <!-- Reazione 1:   2 Prey -> 3 Prey  (crescita della preda) -->
+      <reaction id="PreyGrowth" reversible="false">
         <listOfReactants>
-          <speciesReference species="Susceptible" stoichiometry="1"/>
-          <speciesReference species="Infected" stoichiometry="1"/>
+          <speciesReference species="Prey" stoichiometry="2"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="Infected" stoichiometry="2"/>
+          <speciesReference species="Prey" stoichiometry="3"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>alpha</ci>
+              <apply>
+                <power/>
+                <ci>Prey</ci>
+                <cn type="real">2</cn>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <!-- Reazione 2: Prey + 2 Predator -> 3*Predator (predatore consuma la preda e si riproduce) -->
+      <reaction id="Predation" reversible="false">
+        <listOfReactants>
+          <speciesReference species="Prey" stoichiometry="1"/>
+          <speciesReference species="Predator" stoichiometry="2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Predator" stoichiometry="3"/>
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -60,79 +81,63 @@
               <ci>beta</ci>
               <apply>
                 <power/>
-                <ci>Susceptible</ci>
+                <ci>Prey</ci>
                 <cn type="real">1</cn>
               </apply>
               <apply>
                 <power/>
-                <ci>Infected</ci>
-                <cn type="real">1</cn>
+                <ci>Predator</ci>
+                <cn type="real">2</cn>
               </apply>
             </apply>
           </math>
         </kineticLaw>
       </reaction>
 
-      <!-- 1Infected -> 1Recovered -->
-      <reaction id="recovery" reversible="false">
+      <!-- Reazione 3: 1 Predator ->   (morte del predatore) -->
+      <reaction id="PredatorDeath" reversible="false">
         <listOfReactants>
-          <speciesReference species="Infected" stoichiometry="1"/>
+          <speciesReference species="Predator" stoichiometry="1"/>
         </listOfReactants>
-        <listOfProducts>
-          <speciesReference species="Recovered" stoichiometry="1"/>
-        </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <times/>
-              <ci> gamma </ci>
+              <ci>gamma</ci>
               <apply>
                 <power/>
-                <ci>Infected</ci>
+                <ci>Predator</ci>
                 <cn type="real">1</cn>
               </apply>
             </apply>
           </math>
         </kineticLaw>
       </reaction>
+
     </listOfReactions>
 
+    <!-- Eventi -->
     <listOfEvents>
-      <!-- When infected greater than threshold, vaccination of a certain quantity of susceptible and became recovered -->
-      <event id="vaccination" useValuesFromTriggerTime="true">
+
+      <event id="AddPrey" useValuesFromTriggerTime="false">
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply>
-              <gt/>
-              <ci>Infected</ci>
-              <cn type="real">10</cn>
-            </apply>
+          <apply>
+            <gt/>
+            <ci>Predator</ci>
+            <cn type="integer">15</cn>
+          </apply>
           </math>
         </trigger>
         <listOfEventAssignments>
-          <eventAssignment variable="Susceptible">
+          <eventAssignment variable="alpha">
             <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <apply>
-                <minus/>
-                <ci>Susceptible</ci>
-                <cn type="real">5</cn>
-              </apply>
-            </math>
-          </eventAssignment>
-          <eventAssignment variable="Recovered">
-            <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <apply>
-                <plus/>
-                <ci>Recovered</ci>
-                <cn type="real">5</cn>
-              </apply>
+              <cn type="integer">5</cn>
             </math>
           </eventAssignment>
         </listOfEventAssignments>
       </event>
+
     </listOfEvents>
-
-
-
   </model>
 </sbml>
