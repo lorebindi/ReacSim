@@ -28,13 +28,13 @@
     <!-- Specie -->
     <listOfSpecies>
       <species id="Susceptible" compartment="cell" initialAmount="30"
-               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
+               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="true"
                substanceUnits="item"/>
       <species id="Infected" compartment="cell" initialAmount="12"
-               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
+               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="true"
                substanceUnits="item"/>
       <species id="Recovered" compartment="cell" initialAmount="3"
-               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
+               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="true"
                substanceUnits="item"/>
     </listOfSpecies>
 

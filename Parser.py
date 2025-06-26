@@ -46,12 +46,12 @@ class Parser:
     def extract_species(self):
         species = {}
         for s in self.model.getListOfSpecies():
-            if s.isSetInitialAmount() and not s.isSetInitialConcentration() and s.getHasOnlySubstanceUnits:  # We have the absolute initial amount.
+            if s.isSetInitialAmount() and not s.isSetInitialConcentration() and s.getHasOnlySubstanceUnits():  # We have the absolute initial amount.
                 species[s.getId()] = s.getInitialAmount()
             else:
                 if s.isSetInitialConcentration():
                     raise Exception("Initial Concentration cannot be set.")
-                if not s.hasOnlySubstanceUnits:
+                if not s.hasOnlySubstanceUnits():
                     raise Exception("Substance units cannot be unset.")
                 raise Exception("InitialAmount are not set.")
         return species

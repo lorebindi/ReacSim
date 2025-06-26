@@ -31,10 +31,10 @@
     <!-- Specie -->
     <listOfSpecies>
       <species id="Prey" compartment="cell" initialAmount="10"
-               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
+               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="true"
                substanceUnits="item"/>
       <species id="Predator" compartment="cell" initialAmount="2"
-               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="false"
+               boundaryCondition="false" constant="false" hasOnlySubstanceUnits="true"
                substanceUnits="item"/>
     </listOfSpecies>
 

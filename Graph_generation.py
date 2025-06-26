@@ -11,7 +11,7 @@ def plot_gillepsie(evolution, t_max, filename=None):
     time_values = evolution[TIME]
     specie_names = [k for k in evolution if k != TIME]
 
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(8, 6))
 
     for specie in specie_names:
         valori = evolution[specie]
@@ -19,7 +19,7 @@ def plot_gillepsie(evolution, t_max, filename=None):
 
     plt.xlabel("Time")
     plt.ylabel("Molecule count")
-    plt.title(f"{filename}")
+    plt.title(f"Gillespie: {filename}")
     plt.legend(loc="upper right")
     plt.grid(True)
     plt.xlim(0, t_max)
@@ -33,7 +33,7 @@ def plot_gillepsie(evolution, t_max, filename=None):
             os.remove(file_path)  # Elimina il file precedente
         plt.savefig(file_path)
         print(f"Grafico salvato in: {file_path}")'''
-
+    plt.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/gillespie.png", dpi=900)
     plt.show()
 
 def ode_plot(rr, t_max, filename, show=True):
@@ -64,8 +64,10 @@ def ode_plot(rr, t_max, filename, show=True):
 
     p.grid(True)
     p.xlim(0, t_max)
-    p.title(f"{filename}")
+    p.title(f"ODE: {filename}")
     p.tight_layout()
+
+    p.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/ode.png", dpi=900)
 
     if show:
         p.show()
@@ -86,6 +88,7 @@ def stochastic_rate_constant_plot (x_vals, y_vals, k, constant):
     plt.title(f'Stochastic rate constant inference for {constant}')
     plt.legend()
     plt.grid(True)
+    plt.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/constant.png" , dpi=900)
     plt.show()
 
     '''if GRAPH_FOLDER:
