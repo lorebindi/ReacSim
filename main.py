@@ -6,7 +6,7 @@ from Gillespie_events import *
 from Graph_generation import *
 from ODE_simulation import *
 
-T_MAX = 10
+T_MAX = 12
 
 '''if __name__ == '__main__':
 
@@ -34,8 +34,8 @@ T_MAX = 10
     print(f"Execution time ODEs: {time.time() - t:.3f}")'''
 
 if __name__ == '__main__':
-    # "testAlpha"
-    file_to_valuate = ["lotka_volterra_p_1", "lotka_volterra_p_2"]
+    # , "lotka_volterra_p_2" "SIR_p"
+    file_to_valuate = ["lotka_volterra_p_1"]
 
     current_dir = os.path.dirname(__file__)
     test_folder = os.path.join(current_dir, "Test")

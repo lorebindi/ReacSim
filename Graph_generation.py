@@ -98,3 +98,5 @@ def stochastic_rate_constant_plot (x_vals, y_vals, k, constant):
             os.remove(file_path)  # Elimina il file precedente
         plt.savefig(file_path)
         print(f"Grafico salvato in: {file_path}")'''
+
+#def plot_t_evolution(t_evolution):

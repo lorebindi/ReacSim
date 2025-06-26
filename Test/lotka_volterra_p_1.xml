@@ -27,16 +27,16 @@
       <species id="Prey" compartment="cell" initialAmount="20"
                boundaryCondition="false" constant="false" hasOnlySubstanceUnits="true"
                substanceUnits="item"/>
-      <species id="Predator" compartment="cell" initialAmount="4"
+      <species id="Predator" compartment="cell" initialAmount="6"
                boundaryCondition="false" constant="false" hasOnlySubstanceUnits="true"
                substanceUnits="item"/>
     </listOfSpecies>
 
     <!-- Parametri -->
     <listOfParameters>
-      <parameter id="alpha" value="0.0018" constant="false" units="per_day"/> <!-- tasso di crescita delle prede -->
+      <parameter id="alpha" value="0.04" constant="false" units="per_day"/> <!-- tasso di crescita delle prede -->
       <parameter id="beta" value="0.01" constant="false" units="per_item_day"/> <!-- tasso di successo della caccia -->
-      <parameter id="gamma" value="0.2" constant="true" units="per_day"/> <!-- tasso di mortalità naturale -->
+      <parameter id="gamma" value="0.8" constant="true" units="per_day"/> <!-- tasso di mortalità predatori -->
       <parameter id="time_delay" value="0.10" constant="true" units="per_day"/> <!--  -->
     </listOfParameters>
 
@@ -119,24 +119,44 @@
     <!-- Eventi -->
     <listOfEvents>
 
-      <event id="AddPrey" useValuesFromTriggerTime="false">
+      <event id="hunting">
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <apply>
-            <gt/>
-            <ci>Predator</ci>
-            <cn type="integer">15</cn>
-          </apply>
+            <apply>
+              <gt/>
+              <ci>Predator</ci>
+              <cn type="real">15</cn>
+            </apply>
           </math>
         </trigger>
         <listOfEventAssignments>
-          <eventAssignment variable="alpha">
+          <eventAssignment variable="gamma">
             <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <cn type="integer">5</cn>
+              <cn type="real">5</cn>
             </math>
           </eventAssignment>
         </listOfEventAssignments>
       </event>
+
+      <event id="noHunting">
+        <trigger>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <lt/>
+              <ci>Predator</ci>
+              <cn type="real">7</cn>
+            </apply>
+          </math>
+        </trigger>
+        <listOfEventAssignments>
+          <eventAssignment variable="gamma">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <cn type="real">0.001</cn>
+            </math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+
 
     </listOfEvents>
   </model>
