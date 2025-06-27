@@ -17,8 +17,10 @@ class Parser:
         self.model = self.read_sbml_file()
         self.species = self.extract_species()
         self.parameters = self.extract_parameters()
+        self.dfs = {}
         self.reactions = self.extract_reactions()
         self.events = self.extract_events()
+
 
     def read_sbml_file(self):
         reader = libsbml.SBMLReader()
@@ -64,7 +66,11 @@ class Parser:
     def extract_reactions(self):
         reactions = []
         for r in self.model.getListOfReactions():
-            reactions.extend(Reaction(r, self).get_reaction_as_dict())
+            reaction=Reaction(r, self)
+            reactions.extend(reaction.get_reaction_as_dict())
+            if reaction.constant_inferred_name is not None:
+                self.dfs[reaction.constant_inferred_name] = reaction.df_csv
+
         if len(reactions) == 0: raise Exception("No reactions found.")
         return reactions
 
@@ -85,7 +91,11 @@ class Reaction:
         self.rate_formula_rev = None
         self.kinetic_law = None
         self.isReversible = self.reaction.getReversible()
+        self.df_csv = None
+        self.constant_inferred_name = None
+
         self.extract_reaction()
+
 
     def extract_reaction(self):
         # Reactans' coefficients
@@ -147,7 +157,8 @@ class Reaction:
         if file_path is None:
             raise Exception("File csv not found.")
 
-        df = pd.read_csv(file_path)
+        self.df_csv = pd.read_csv(file_path)
+        self.constant_inferred_name = constant
 
         stoich_reactants = {reactant.getSpecies(): reactant.getStoichiometry() for reactant in
                             self.reaction.getListOfReactants()}
@@ -156,7 +167,7 @@ class Reaction:
                            self.reaction.getListOfProducts()}
 
         # There must be at least one specie of the reaction in the file and the time.
-        species_in_csv = df.columns
+        species_in_csv = self.df_csv.columns
         num_of_species_in_csv = 0
         if constants.TIME not in species_in_csv:
             raise Exception("Missing time column in csv.")
@@ -170,14 +181,14 @@ class Reaction:
             raise Exception("No species found in csv.")
 
         # Compute time differences between rows
-        delta_t = df[constants.TIME].diff().iloc[1:]
+        delta_t = self.df_csv[constants.TIME].diff().iloc[1:]
 
         v_t_list = []
 
         for reac_name, coeff_reac in stoich_reactants.items():
-            if reac_name not in df.columns:
+            if reac_name not in self.df_csv.columns:
                 continue
-            delta_p = df[reac_name].diff().iloc[1:]
+            delta_p = self.df_csv[reac_name].diff().iloc[1:]
             if reac_name in stoich_products.keys():
                 # If a species is both reactant and product, use the difference of
                 # its stoichiometric coefficients.
@@ -188,9 +199,9 @@ class Reaction:
                 v = delta_p / ((-1) * coeff_reac * delta_t)
             v_t_list.append(v)
         for prod_name, coeff_prod in stoich_products.items():
-            if prod_name not in df.columns or prod_name in stoich_reactants.keys():
+            if prod_name not in self.df_csv.columns or prod_name in stoich_reactants.keys():
                 continue
-            delta_p = df[prod_name].diff().iloc[1:]
+            delta_p = self.df_csv[prod_name].diff().iloc[1:]
             v = delta_p / (coeff_prod * delta_t)
             v_t_list.append(v)
 
@@ -201,9 +212,9 @@ class Reaction:
         v_avg = sum(v_t_list) / len(v_t_list)
 
         # Calcolo del termine di legge d'azione di massa: [A]^1 * [B]^2
-        rate_expr = np.ones(len(df))
+        rate_expr = np.ones(len(self.df_csv))
         for specie, coeff_reac in stoich_reactants.items():
-            rate_expr *= df[specie] ** coeff_reac
+            rate_expr *= self.df_csv[specie] ** coeff_reac
         rate_expr = rate_expr.iloc[1:]  # delete the first
 
         # Fitting: v ≈ k * rate_expr

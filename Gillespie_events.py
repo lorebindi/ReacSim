@@ -178,8 +178,6 @@ class Gillespie:
             # There is one or more event(s) to evaluate and apply its EventAssigment
             if to_eval_events != []:
                 for event in to_eval_events:
-                    if event[ID] == "noFood":
-                        pass
                     # Check that the trigger is still True
                     if self.evaluate_expr(event[TRIGGER_FORMULA], ERROR_TRIGGER, self.t):
                         # event[VALUES_FROM_TRIGGER_TIME] may be {} if eventAssigment use only constant or if

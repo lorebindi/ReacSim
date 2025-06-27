@@ -6,7 +6,7 @@ from Gillespie_events import *
 from Graph_generation import *
 from ODE_simulation import *
 
-T_MAX = 12
+T_MAX = 10
 
 '''if __name__ == '__main__':
 
@@ -35,7 +35,7 @@ T_MAX = 12
 
 if __name__ == '__main__':
     # , "lotka_volterra_p_2" "SIR_p"
-    file_to_valuate = ["lotka_volterra_p_1"]
+    file_to_valuate = ["testBeta"]
 
     current_dir = os.path.dirname(__file__)
     test_folder = os.path.join(current_dir, "Test")
@@ -45,23 +45,23 @@ if __name__ == '__main__':
         if filename.endswith(".xml") and filename[:-4] in file_to_valuate:
             file_path = os.path.join(test_folder, filename)
             print(f"\nProcessing file: {filename}")
-
+            parser = Parser(file_path, file_path_csv)
             try:
-                parser = Parser(file_path, file_path_csv)
+
                 t = time.time()
                 Gillespie_sim = Gillespie(parser, T_MAX)
                 Gillespie_sim.gillespie_ssa()
                 evolution = Gillespie_sim.get_evolution()
-                plot_gillepsie(evolution, T_MAX, filename[:-4])  # TODO add memorization plot
+                plot_gillepsie(evolution, T_MAX, filename[:-4], parser.dfs)
                 print(f"Execution time with Gillespie for {filename}: {time.time() - t:.3f}")
             except Exception as e:
                 print(f"{RED}[Gillespie ERROR] {filename}: {e}{RESET}")
 
-            try:
+            '''try:
                 # Optional ODE Simulation:
                 t = time.time()
                 simulate_odes_road_runner(file_path, T_MAX, filename[:-4])
                 print(f"Execution time ODEs for {filename}: {time.time() - t:.3f}")
             except Exception as e:
-                print(f"{RED}[ODEs ERROR] {filename}: {e}{RESET}")
+                print(f"{RED}[ODEs ERROR] {filename}: {e}{RESET}")'''
 
