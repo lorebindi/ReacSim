@@ -5,6 +5,7 @@ import time
 from Gillespie_events import *
 from Graph_generation import *
 from ODE_simulation import *
+import Parser
 
 T_MAX = 10
 
@@ -14,7 +15,7 @@ T_MAX = 10
     file_path = os.path.join(current_dir, "Example", "Generated/lotka-volterra-event.xml")
     #file_path = os.path.join(current_dir, "Example", "BioModels/l2v3/GastricSlowWaveActivity.xml")
     #file_path = os.path.join(current_dir, "Example", "BioModels/l2v4/Ciliberto2003.xml")
-    #file_path = os.path.join(current_dir, "Example", "BioModels/l2v4/You2010_General_Yeast_mRNA_Translation.xml")
+    #file_path = os.path.join(current_dir, "Example", "BioModels/l2v4/You2010_Ge neral_Yeast_mRNA_Translation.xml")
     file_path_csv = os.path.join(current_dir, "Example", "Inference_of_kinetic_laws")
 
     parser=Parser(file_path, file_path_csv  )
@@ -34,7 +35,7 @@ T_MAX = 10
     print(f"Execution time ODEs: {time.time() - t:.3f}")'''
 
 if __name__ == '__main__':
-    # , "lotka_volterra_p_2" "SIR_p"
+    # , "lotka_volterra_p_2" "SIR_p" "lotka_volterra_p_1"
     file_to_valuate = ["testBeta"]
 
     current_dir = os.path.dirname(__file__)
@@ -45,14 +46,15 @@ if __name__ == '__main__':
         if filename.endswith(".xml") and filename[:-4] in file_to_valuate:
             file_path = os.path.join(test_folder, filename)
             print(f"\nProcessing file: {filename}")
-            parser = Parser(file_path, file_path_csv)
+            parser = Parser.Parser(file_path, file_path_csv)
+            #parser.export_mean_species_counts_csv("Predation", 50)
             try:
 
                 t = time.time()
                 Gillespie_sim = Gillespie(parser, T_MAX)
                 Gillespie_sim.gillespie_ssa()
                 evolution = Gillespie_sim.get_evolution()
-                print(plot_gillepsie(evolution, T_MAX, filename[:-4], parser.dfs))
+                plot_gillepsie(evolution, T_MAX, filename[:-4], parser.dfs)
                 print(f"Execution time with Gillespie for {filename}: {time.time() - t:.3f}")
             except Exception as e:
                 print(f"{RED}[Gillespie ERROR] {filename}: {e}{RESET}")

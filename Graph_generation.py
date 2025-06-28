@@ -49,18 +49,6 @@ def plot_gillepsie(evolution, t_max, filename=None, dfs_csv= None):
         print(f"Grafico salvato in: {file_path}")'''
     #plt.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/gillespie.png", dpi=900)
     plt.show()
-    specie_to_time_dict = {}
-    time_query = list(range(0, int(t_max) + 1))
-    for specie in specie_names:
-        valori = evolution[specie]
-        # Interpolazione manuale con tipi float Python nativi
-        values = [
-            float(np.interp(t, time_values, valori)) for t in time_query
-        ]
-        specie_to_time_dict[specie] = {
-            int(t): round(float(v), 4) for t, v in zip(time_query, values)
-        }
-    return specie_to_time_dict
 
 def ode_plot(rr, t_max, filename, show=True):
 

@@ -34,7 +34,7 @@
 
     <!-- Parametri -->
     <listOfParameters>
-      <!--<parameter id="alpha" value="2" constant="false" units="per_day"/>--> <!-- tasso di crescita delle prede -->
+      <parameter id="alpha" value="0.001" constant="false" units="per_day"/> <!-- tasso di crescita delle prede -->
       <parameter id="beta" value="0.01" constant="false" units="per_item_day"/> <!-- tasso di successo della caccia -->
       <parameter id="gamma" value="0.2" constant="true" units="per_day"/> <!-- tasso di mortalità naturale -->
       <parameter id="time_delay" value="0.10" constant="true" units="per_day"/> <!--  -->

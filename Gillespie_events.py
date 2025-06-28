@@ -4,7 +4,7 @@ import random
 
 # Moduli locali
 from Constants import *
-from Parser import *
+#from Parser import *
 
 '''
 1. Calculate τ (tau).

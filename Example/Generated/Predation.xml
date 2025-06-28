@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
+  <model id="single_reaction_Predation_model">
+    <listOfUnitDefinitions>
+      <unitDefinition id="per_day">
+        <listOfUnits>
+          <unit kind="second" exponent="1" scale="0" multiplier="86400"/>
+        </listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfCompartments>
+      <compartment id="cell" size="1" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="Predator" compartment="cell" initialAmount="4" substanceUnits="item" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false"/>
+      <species id="Prey" compartment="cell" initialAmount="10" substanceUnits="item" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="beta" value="0.005" units="per_day" constant="false"/>
+    </listOfParameters>
+    <listOfReactions>
+      <reaction id="Predation" reversible="false">
+        <listOfReactants>
+          <speciesReference species="Prey" stoichiometry="1"/>
+          <speciesReference species="Predator" stoichiometry="2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Predator" stoichiometry="3"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> beta </ci>
+              <apply>
+                <power/>
+                <ci> Prey </ci>
+                <cn> 1 </cn>
+              </apply>
+              <apply>
+                <power/>
+                <ci> Predator </ci>
+                <cn> 2 </cn>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>

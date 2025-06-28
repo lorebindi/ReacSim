@@ -1,14 +1,20 @@
-# Librerie standard
+# Standard libraries
+import csv
 import os
 
-# Librerie di terze parti
+# Third part libraries
 import libsbml
 import numpy as np
 import pandas as pd
+from scipy.interpolate import interp1d
 
-# Moduli locali
+
+# Local modul
 import Constants as constants
 import Graph_generation as graphgen
+import Gillespie_events as Gillespie
+from main import T_MAX
+
 
 class Parser:
     def __init__(self, file_name, path_inference_directory = None):
@@ -20,7 +26,6 @@ class Parser:
         self.dfs = {}
         self.reactions = self.extract_reactions()
         self.events = self.extract_events()
-
 
     def read_sbml_file(self):
         reader = libsbml.SBMLReader()
@@ -80,6 +85,162 @@ class Parser:
             events.append(Event(e, self).get_event_as_dict())
         return events
 
+    def extract_kinetic_constant_name(self, ast):
+        if ast is None:
+            raise Exception("AST is None.")
+
+        # Always * at the root
+        if ast.getType() != libsbml.AST_TIMES:
+            raise Exception("AST's root is not TIMES(*).")
+
+        #  all child nodes (multiplicands)
+        for child in [ast.getChild(i) for i in range(ast.getNumChildren())]:
+            if child.getType() == libsbml.AST_NAME:  # stochastic rate constant
+                return child.getName()
+            return self.extract_kinetic_constant_name(child)
+
+        raise Exception("Kinetic constants not found.")
+
+    def export_mean_species_counts_csv(self, reaction_id, executions):
+        reaction = self.model.getReaction(reaction_id)
+        if reaction is None:
+            raise Exception(f"Reaction '{reaction_id}' not found.")
+
+        # Crea un nuovo documento e modello SBML
+        new_document = libsbml.SBMLDocument(self.model.getLevel(), self.model.getVersion())
+        new_model = new_document.createModel()
+        new_model.setId(f"single_reaction_{reaction_id}_model")
+
+        kinetic_law = reaction.getKineticLaw()
+        if kinetic_law is None:
+            raise Exception("Kinetic law not found for the reaction.")
+
+        kinetic_constant_name = self.extract_kinetic_constant_name(kinetic_law.getMath())
+
+        # Copy the units, compartments, species, parameters involved
+        involved_species = set()
+        for reactant in reaction.getListOfReactants():
+            involved_species.add(reactant.getSpecies())
+        for product in reaction.getListOfProducts():
+            involved_species.add(product.getSpecies())
+        '''for modifier in reaction.getListOfModifiers():
+            involved_species.add(modifier.getSpecies())'''
+
+        # Copy compartments needed
+        compartments = set()
+        for species_id in involved_species:
+            species = self.model.getSpecies(species_id)
+            if species is None:
+                continue
+            comp_id = species.getCompartment()
+            compartments.add(comp_id)
+
+        for comp_id in compartments:
+            comp = self.model.getCompartment(comp_id)
+            if comp:
+                new_model.addCompartment(comp.clone())
+
+        # Copy of species
+        unit_ids = set()
+        for species_id in involved_species:
+            species = self.model.getSpecies(species_id)
+            if species:
+                new_model.addSpecies(species.clone())
+                if species.isSetUnits():
+                    unit_ids.add(species.getUnits())
+
+        # Copy of parameters used in the reaction#
+        #new_model.addParameter(self.model.getListOfParameters()[kinetic_constant_name].clone())
+
+        for param in self.model.getListOfParameters():
+            if param.getId() == kinetic_constant_name:
+                new_model.addParameter(param.clone())
+                if param.isSetUnits():
+                    unit_ids.add(param.getUnits())
+
+        # Copy of the reaction
+        new_model.addReaction(reaction.clone())
+
+        # Add all required unit definitions to the new model
+        for unit_id in unit_ids:
+            unit_def = self.model.getUnitDefinition(unit_id)
+            if unit_def:
+                new_model.addUnitDefinition(unit_def.clone())
+
+        # Ml saving
+        path = f"./Example/Generated/{reaction_id}.xml"
+        writer = libsbml.SBMLWriter()
+        writer.writeSBMLToFile(new_document, path)
+
+
+
+
+        # Interpolation of the points
+        sum_per_specie = {}
+        species_to_time_dict = {} #final result
+        #TODO e se l'esecuzione termina molto prima di T_MAX, devo gestire il fatto che siano assenti dei valori in quei punti.
+        time_query = list(range(0, T_MAX + 1))
+
+        for i in range(executions):
+            print(f"{i}\n")
+            # Gillespie simulation
+            new_parser = Parser(path)
+            gillespie_sim = Gillespie.Gillespie(new_parser, T_MAX)
+            gillespie_sim.gillespie_ssa()
+            evolution = gillespie_sim.get_evolution()
+
+            # Extract time values and species names
+            time_values = evolution["time"]
+            specie_names = [name for name in evolution if name != "time"]
+
+            for specie in specie_names:
+                values = evolution[specie]
+
+                # Step-wise interpolation (values stay constant until next time point)
+                interp = interp1d(
+                    time_values,
+                    values,
+                    kind='previous',
+                    bounds_error=False,
+                    fill_value=(values[0], values[-1])
+                )
+
+                # Calculate interpolated values at each integer second
+                interpolated_values = []
+                for t in time_query:
+                    v = float(interp(t))
+                    interpolated_values.append(v)
+
+                # Initialize with zeros if this species is encountered for the first time
+                if specie not in sum_per_specie:
+                    sum_per_specie[specie] = [0.0] * (T_MAX+ 1) #list
+
+                # Accumulate values
+                for idx in range(len(time_query)):
+                    sum_per_specie[specie][idx] += interpolated_values[idx]
+
+        # Calculate the average for each species and time point
+        for specie in sum_per_specie:
+            mean_dict = {}
+            for idx, total in enumerate(sum_per_specie[specie]):
+                media = round(total / executions, 4)
+                tempo = time_query[idx]
+                mean_dict[tempo] = media
+
+            species_to_time_dict[specie] = mean_dict
+
+
+        # Write to CSV file
+        csv_path = f"./Example/Inference_of_kinetic_laws/{kinetic_constant_name}.csv"
+
+        with open(csv_path, mode='w', newline='') as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow([constants.TIME] + [f"{species}" for species in species_to_time_dict])
+
+            for time_point in range(0, T_MAX + 1):
+                row = [time_point] + [species_to_time_dict[species][time_point] for species in species_to_time_dict]
+                writer.writerow(row)
+
 class Reaction:
     def __init__(self, reaction, parser):
         self.parser = parser
@@ -95,7 +256,6 @@ class Reaction:
         self.constant_inferred_name = None
 
         self.extract_reaction()
-
 
     def extract_reaction(self):
         # Reactans' coefficients
@@ -317,6 +477,7 @@ class Reaction:
                 constants.PRODUCTS: self.reactants,
                 constants.RATE_FORMULA: self.rate_formula_rev
             } ]
+
 
 class Event:
     def __init__(self, event, parser):
