@@ -47,8 +47,20 @@ def plot_gillepsie(evolution, t_max, filename=None, dfs_csv= None):
             os.remove(file_path)  # Elimina il file precedente
         plt.savefig(file_path)
         print(f"Grafico salvato in: {file_path}")'''
-    plt.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/gillespie.png", dpi=900)
+    #plt.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/gillespie.png", dpi=900)
     plt.show()
+    specie_to_time_dict = {}
+    time_query = list(range(0, int(t_max) + 1))
+    for specie in specie_names:
+        valori = evolution[specie]
+        # Interpolazione manuale con tipi float Python nativi
+        values = [
+            float(np.interp(t, time_values, valori)) for t in time_query
+        ]
+        specie_to_time_dict[specie] = {
+            int(t): round(float(v), 4) for t, v in zip(time_query, values)
+        }
+    return specie_to_time_dict
 
 def ode_plot(rr, t_max, filename, show=True):
 
@@ -81,7 +93,7 @@ def ode_plot(rr, t_max, filename, show=True):
     p.title(f"ODE: {filename}")
     p.tight_layout()
 
-    p.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/ode.png", dpi=900)
+    #p.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/ode.png", dpi=900)
 
     if show:
         p.show()
@@ -102,7 +114,7 @@ def stochastic_rate_constant_plot (x_vals, y_vals, k, constant):
     plt.title(f'Stochastic rate constant inference for {constant}')
     plt.legend()
     plt.grid(True)
-    plt.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/constant.png" , dpi=900)
+    #plt.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/constant.png" , dpi=900)
     plt.show()
 
     '''if GRAPH_FOLDER:

@@ -52,7 +52,7 @@ if __name__ == '__main__':
                 Gillespie_sim = Gillespie(parser, T_MAX)
                 Gillespie_sim.gillespie_ssa()
                 evolution = Gillespie_sim.get_evolution()
-                plot_gillepsie(evolution, T_MAX, filename[:-4], parser.dfs)
+                print(plot_gillepsie(evolution, T_MAX, filename[:-4], parser.dfs))
                 print(f"Execution time with Gillespie for {filename}: {time.time() - t:.3f}")
             except Exception as e:
                 print(f"{RED}[Gillespie ERROR] {filename}: {e}{RESET}")
