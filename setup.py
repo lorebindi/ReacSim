@@ -12,7 +12,8 @@ setup(
         "pandas",
         "matplotlib",
         "python-libsbml",
-        "libroadrunner"
+        "libroadrunner",
+        "scipy"
         # Aggiungi qui tutte le librerie di cui hai bisogno
         # es: "roadrunner", "chempy", "pint", ecc.
     ],

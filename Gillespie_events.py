@@ -1,10 +1,8 @@
-# Librerie standard
-import math
+# Standard Library
 import random
 
-# Moduli locali
+# Local Modules
 from Constants import *
-#from Parser import *
 
 '''
 1. Calculate τ (tau).
@@ -29,8 +27,8 @@ from Constants import *
 # (L2V3) An important question is whether an event can be triggered at or
 # before the initial simulation time (t ≤ 0). The answer is no: events
 # can only be triggered after the simulation has started, that is, for t > 0.
-# If the trigger condition becomes false before the delay expires, the event
-# is cancelled (As if the persistent attribute of the trigger were set to True).
+# If the trigger condition becomes false, before the delay expires, the event
+# is canceled (As if the persistent attribute of the trigger were set to True, but the project doesn't handle this attribute.
 
 class Gillespie:
     def __init__(self, parser, t_max):
@@ -104,8 +102,8 @@ class Gillespie:
             # Select delay events
             min_delay_time = self.t + tau
 
-            to_eval_events = []
-            to_remove = []
+            to_eval_events = [] # events to evaluate at current t
+            to_remove = []      # list of events have to remove from pending_event_delay
 
             for delay_time, event in self.pending_event_delay.values():
                 # evaluation of the trigger at delay_time
