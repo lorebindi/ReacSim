@@ -36,7 +36,7 @@ T_MAX = 10
 
 if __name__ == '__main__':
     # , "lotka_volterra_p_2" "SIR_p" "lotka_volterra_p_1"
-    file_to_valuate = ["testBeta"]
+    file_to_valuate = ["lotka_volterra_p_2"]
 
     current_dir = os.path.dirname(__file__)
     test_folder = os.path.join(current_dir, "Test")

@@ -37,7 +37,8 @@
       <parameter id="alpha" value="0.001" constant="false" units="per_day"/> <!-- tasso di crescita delle prede -->
       <parameter id="beta" value="0.01" constant="false" units="per_item_day"/> <!-- tasso di successo della caccia -->
       <parameter id="gamma" value="0.2" constant="true" units="per_day"/> <!-- tasso di mortalità naturale -->
-      <parameter id="time_delay" value="0.10" constant="true" units="per_day"/> <!--  -->
+      <parameter id="time_delay" value="30" constant="true" units="per_day"/> <!--  -->
+      <parameter id="time_delay_small" value="0.10" constant="true" units="per_day"/> <!--  -->
     </listOfParameters>
 
      <!-- Reazioni -->
@@ -117,8 +118,8 @@
     </listOfReactions>
 
     <!-- Eventi -->
-    <!--<listOfEvents>
-
+    <listOfEvents>
+    <!--
       <event id="AddPrey" useValuesFromTriggerTime="false">
         <trigger>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -137,7 +138,60 @@
           </eventAssignment>
         </listOfEventAssignments>
       </event>
+    -->
+       <!-- Evento 1: se i predatori superano 25, aumenta gamma dopo un ritardo -->
+    <event id="OverpopulationPredator" useValuesFromTriggerTime="true">
+      <trigger>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <gt/>
+            <ci>Predator</ci>
+            <cn type="integer">25</cn>
+          </apply>
+        </math>
+      </trigger>
+      <delay>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci>time_delay</ci>
+        </math>
+      </delay>
+      <listOfEventAssignments>
+        <eventAssignment variable="gamma">
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn type="real">1.0</cn> <!-- aumento del tasso di mortalità -->
+          </math>
+        </eventAssignment>
+      </listOfEventAssignments>
+    </event>
 
-    </listOfEvents>-->
+    <!-- Evento 2: se le prede scendono sotto 5, ne vengono aggiunte 10 dopo un ritardo -->
+    <event id="PreyRecovery" useValuesFromTriggerTime="true">
+      <trigger>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <lt/>
+            <ci>Prey</ci>
+            <cn type="integer">5</cn>
+          </apply>
+        </math>
+      </trigger>
+      <delay>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci>time_delay_small</ci>
+        </math>
+      </delay>
+      <listOfEventAssignments>
+        <eventAssignment variable="Prey">
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <plus/>
+              <ci>Prey</ci>
+              <cn type="integer">10</cn>
+            </apply>
+          </math>
+        </eventAssignment>
+      </listOfEventAssignments>
+    </event>
+    </listOfEvents>
   </model>
 </sbml>
