@@ -492,19 +492,21 @@ class Event:
         self.delay_formula = None
         self.use_values_from_trigger_time = None
         self.value_from_trigger_time = {}
-        self.use_trigger_values = False
+        self.use_trigger_values = True
 
         self.extract_event()
 
     def extract_event(self):
-        # In SBML Level 2 Version 4, the useValuesFromTriggerTime attribute is only valid if a delay is also defined.
+        # SBML Level 2 Version 4: the useValuesFromTriggerTime attribute is only valid if a delay is also defined.
         # This block checks that constraint and sets a flag (use_trigger_values) to True only if the event has a delay
         # and set UseValuesFromTriggerTime to True or is not setted.
+        # Level 2 Version 3: The identifiers occurring in the MathML ci attributes of the
+        # 2 EventAssignment object represent the value of the identifier at the point when the Event is fired.
         if self.parser.model.getVersion() == 4:
-            if self.event.isSetDelay() and self.event.getUseValuesFromTriggerTime():
-                self.use_trigger_values = True
+            if not (self.event.isSetDelay() and self.event.getUseValuesFromTriggerTime()):
+                self.use_trigger_values = False
 
-            self.use_values_from_trigger_time = self.use_trigger_values
+        self.use_values_from_trigger_time = self.use_trigger_values
 
         trigger = self.event.getTrigger()
         if trigger is None:

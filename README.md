@@ -3,9 +3,9 @@ Support is limited to SBML files meeting the following requirements:
 
 1. SBML files of level 2, version 3 or 4 are supported. 
 2. The file contains at least one reaction.
-3. Each species must specify at least one of the values `InitialAmount` or `InitialConcentration`. If both are provided, `InitialAmount` takes precedence.
+3. Each species must specify only the value `InitialAmount` otherwise it abort.
 4. One or more compartments are supported, provided they do not appear in the kinetic law.
-5. The presence of the `<listOfParameters>` tag is supported.
+5. The presence of the `<listOfParameters>` tag is supported only in the radix of the file.
 6. Only mass action kinetic laws are supported, and they must be represented in the file as follows:
 ```xml
 <reaction id="R" reversible="false">
