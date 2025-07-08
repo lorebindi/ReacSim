@@ -73,7 +73,8 @@ class Gillespie:
             value = self.evaluate_expr(libsbml.formulaToString(ea.getMath()), ERROR_EVENT_ASSIGNMENTS, self.t)
 
             if value < 0:
-                raise Exception(f"Impossible to do apply the event {event_id}")
+                print(f"{RED}Impossible to do apply the event, skip {event_id} ")
+                return
 
             # Apply to the right variable
             if var_id in self.parser.species:
@@ -81,7 +82,8 @@ class Gillespie:
             elif var_id in self.parser.parameters:
                 self.parser.parameters[var_id] = value
             else:
-                raise Exception(f"Cannot apply assignment to unknown variable: {var_id}")
+                print(f"{RED}Cannot apply assignment to unknown variable: {var_id}, skip {event_id} ")
+                return
 
     def gillespie_ssa (self):
         while self.t < self.t_max:
