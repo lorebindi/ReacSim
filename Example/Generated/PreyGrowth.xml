@@ -15,15 +15,15 @@
       <species id="Prey" compartment="cell" initialAmount="5" substanceUnits="item" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false"/>
     </listOfSpecies>
     <listOfParameters>
-      <parameter id="alpha" value="0.013" units="per_day" constant="false"/>
+      <parameter id="alpha" value="0.04" units="per_day" constant="false"/>
     </listOfParameters>
     <listOfReactions>
       <reaction id="PreyGrowth" reversible="false">
         <listOfReactants>
-          <speciesReference species="Prey" stoichiometry="2"/>
+          <speciesReference species="Prey" stoichiometry="1"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="Prey" stoichiometry="3"/>
+          <speciesReference species="Prey" stoichiometry="2"/>
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -33,7 +33,7 @@
               <apply>
                 <power/>
                 <ci> Prey </ci>
-                <cn> 2 </cn>
+                <cn> 1 </cn>
               </apply>
             </apply>
           </math>

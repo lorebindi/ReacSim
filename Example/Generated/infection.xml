@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
-  <model id="single_reaction_Predation_model">
+  <model id="single_reaction_infection_model">
     <listOfUnitDefinitions>
-      <unitDefinition id="per_day">
+      <unitDefinition id="per_item_day">
         <listOfUnits>
-          <unit kind="second" exponent="1" scale="0" multiplier="86400"/>
+          <unit kind="item" exponent="-1"/>
+          <unit kind="second" exponent="-1" multiplier="86400"/>
         </listOfUnits>
       </unitDefinition>
     </listOfUnitDefinitions>
@@ -12,20 +13,20 @@
       <compartment id="cell" size="1" constant="true"/>
     </listOfCompartments>
     <listOfSpecies>
-      <species id="Prey" compartment="cell" initialAmount="20" substanceUnits="item" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false"/>
-      <species id="Predator" compartment="cell" initialAmount="4" substanceUnits="item" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false"/>
+      <species id="Susceptible" compartment="cell" initialAmount="30" substanceUnits="item" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false"/>
+      <species id="Infected" compartment="cell" initialAmount="12" substanceUnits="item" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false"/>
     </listOfSpecies>
     <listOfParameters>
-      <parameter id="beta" value="0.0009" units="per_day" constant="false"/>
+      <parameter id="beta" value="0.0028" units="per_item_day" constant="false"/>
     </listOfParameters>
     <listOfReactions>
-      <reaction id="Predation" reversible="false">
+      <reaction id="infection" reversible="false">
         <listOfReactants>
-          <speciesReference species="Prey" stoichiometry="1"/>
-          <speciesReference species="Predator" stoichiometry="2"/>
+          <speciesReference species="Susceptible" stoichiometry="1"/>
+          <speciesReference species="Infected" stoichiometry="1"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="Predator" stoichiometry="3"/>
+          <speciesReference species="Infected" stoichiometry="1"/>
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -34,13 +35,13 @@
               <ci> beta </ci>
               <apply>
                 <power/>
-                <ci> Prey </ci>
+                <ci> Susceptible </ci>
                 <cn> 1 </cn>
               </apply>
               <apply>
                 <power/>
-                <ci> Predator </ci>
-                <cn> 2 </cn>
+                <ci> Infected </ci>
+                <cn> 1 </cn>
               </apply>
             </apply>
           </math>

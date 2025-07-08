@@ -283,13 +283,14 @@ class Reaction:
             ast = self.kinetic_law.getMath()
             if ast is None:
                 raise Exception("Kinetic law not found.")
+            # kinetic law = forward - reverse
             if ast.getType() != libsbml.AST_MINUS:
                 raise Exception("Kinetic law with reversible attribute not correct.")
 
             ast_forward = ast.getChild(0)
             ast_reverse = ast.getChild(1)
             self.validate_mass_action_kinetic_law(ast_forward)
-            self.validate_mass_action_kinetic_law(ast_reverse)
+            self.validate_mass_action_kinetic_law(ast_reverse, isReverse = True)
 
             self.rate_formula = libsbml.formulaToString(ast_forward)
             self.rate_formula_rev = libsbml.formulaToString(ast_reverse)
@@ -389,7 +390,7 @@ class Reaction:
         if plot:
             graphgen.stochastic_rate_constant_plot(rate_expr.values, v_avg.values, k_opt[0], constant)
 
-    def validate_mass_action_kinetic_law(self, ast_root):
+    def validate_mass_action_kinetic_law(self, ast_root, isReverse = False): #verso
         if ast_root is None:
             raise Exception("AST is None.")
         # If the reaction is a synthesis (  -> something) then the kinetic law is equal
@@ -397,10 +398,10 @@ class Reaction:
         if ast_root.getType() == libsbml.AST_NAME:
             return
 
-        if self.validate_mass_action_structure(ast_root) == 0:
+        if self.validate_mass_action_structure(ast_root, isReverse = isReverse) == 0:
             raise Exception("Stochastic rate constant absent.")
 
-    def validate_mass_action_structure(self, ast, stochastic_rate_constant_found=0):
+    def validate_mass_action_structure(self, ast, stochastic_rate_constant_found=0, isReverse = False):
         if ast is None:
             raise Exception("AST is None.")
 
@@ -425,12 +426,13 @@ class Reaction:
                 exponent = child.getChild(1)
                 if (
                         base.getType() != libsbml.AST_NAME or
-                        base.getName() not in self.reactants or
                         exponent.getType() not in constants.TYPE_NUMBER
                 ):
-                    if not self.isReversible and exponent.getValue() != self.reactants[base.getName()]:
+                    if (not isReverse and exponent.getValue() != self.reactants[base.getName()] and
+                            base.getName() not in self.reactants):
                         raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
-                    elif self.isReversible and exponent.getValue() != self.products[base.getName()]:
+                    elif (isReverse and exponent.getValue() != self.products[base.getName()] and
+                        base.getName() not in self.products):
                         raise Exception("AST_FUNCTION_POWER node is written in the wrong way.")
             else:
                 raise Exception(f"AST node not expected (type: {child.getType()}, name: {child.getName()}, "

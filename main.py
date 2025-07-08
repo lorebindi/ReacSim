@@ -4,6 +4,7 @@ import time
 from multiprocessing import Process
 
 from Gillespie_events import *
+from Graph_generation import *
 from ODE_simulation import *
 import Parser
 
