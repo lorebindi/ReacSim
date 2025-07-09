@@ -4,32 +4,6 @@ import random
 # Local Modules
 from Constants import *
 
-'''
-1. Calculate τ (tau).
-2. Iterate over the scheduled events and add them to to_eval_events if:
-                t < delay_time < t + τ (where min_delay_time = min{delay_time}) and
-                evaluate_expr(trigger_expr, ERROR_TRIGGER) at t = delay_time returns True
-   Then
-    a. If min_delay_time is not None:
-        I. Iterate again over the scheduled events and remove those for which:
-                                  raise Exception(f"Variable '{string_of_variable}' not found in model.")
-  evaluate_expr(trigger_expr, ERROR_TRIGGER) at t = delay_time returns False
-        II. Set t = delay_time
-    b. Otherwise, set t = t + τ
-3. Iterate over all events, evaluate them at time t (which may be t + τ or min_delay_time),
-    and if their evaluation changes from False → True, add them to to_eval_events.
-4. Evaluate all events in to_eval_events, in no particular order.
-    Before evaluating each event, always verify that its trigger condition remains True.
-    (e.g., 1 - (check secondary trigger) - 2 - ...)
-5. Only if to_eval_events is empty, execute the reaction.
-'''
-
-# (L2V3) An important question is whether an event can be triggered at or
-# before the initial simulation time (t ≤ 0). The answer is no: events
-# can only be triggered after the simulation has started, that is, for t > 0.
-# If the trigger condition becomes false, before the delay expires, the event
-# is canceled (As if the persistent attribute of the trigger were set to True, but the project doesn't handle this attribute.
-
 class Gillespie:
     def __init__(self, parser, t_max):
         self.t_max = t_max
@@ -49,6 +23,8 @@ class Gillespie:
         self.evolution = {TIME: [self.t]}
         self.evolution.update({id_specie: [amount] for id_specie,amount in self.parser.species.items()})
 
+    '''This method safely evaluates a string expression using the current 
+    species values, parameters, and simulation time.'''
     def evaluate_expr(self, expr, error_message, time_value, safe_globals = SAFE_GLOBALS_BASE):
         # Merge state and parameters in a single dictionary for expression evaluation
         local_scope = {**self.parser.species, **self.parser.parameters, "time": time_value}
@@ -59,7 +35,11 @@ class Gillespie:
             raise Exception(
                 f"{error_message} — Evaluation failed.\n"
                 f"Expression: {expr}\n")
-        
+
+    ''' This method applies an event's assignments by first restoring any 
+    variable values captured at trigger time, then evaluating and applying 
+    each EventAssignment to the model's species or parameters. Skips the 
+    event if assignments are invalid (e.g., negative values or unknown variables).'''
     def apply_events_assigment(self, event_id, events_assigments, values_from_trigger_time):
         # Update the current state and parameters with the values captured at the trigger time
         for var_ea, value_ea in values_from_trigger_time.items():
@@ -85,6 +65,8 @@ class Gillespie:
                 print(f"{RED}Cannot apply assignment to unknown variable: {var_id}, skip {event_id} ")
                 return
 
+    '''This method simulates a stochastic trajectory using the Gillespie SSA (Stochastic Simulation Algorithm),
+    extended to support SBML events and delays. '''
     def gillespie_ssa (self):
         while self.t < self.t_max:
             propensities = []
@@ -213,6 +195,32 @@ class Gillespie:
             self.evolution[TIME].append(self.t)
             for s_id in self.parser.species:
                 self.evolution[s_id].append(self.parser.species[s_id])
+
+    '''Main steps:
+    1. Calculate τ (tau).
+    2. Iterate over the scheduled events and add them to to_eval_events if:
+                    t < delay_time < t + τ (where min_delay_time = min{delay_time}) and
+                    evaluate_expr(trigger_expr, ERROR_TRIGGER) at t = delay_time returns True
+       Then
+        a. If min_delay_time is not None:
+            I. Iterate again over the scheduled events and remove those for which:
+                                      raise Exception(f"Variable '{string_of_variable}' not found in model.")
+      evaluate_expr(trigger_expr, ERROR_TRIGGER) at t = delay_time returns False
+            II. Set t = delay_time
+        b. Otherwise, set t = t + τ
+    3. Iterate over all events, evaluate them at time t (which may be t + τ or min_delay_time),
+        and if their evaluation changes from False → True, add them to to_eval_events.
+    4. Evaluate all events in to_eval_events, in no particular order.
+        Before evaluating each event, always verify that its trigger condition remains True.
+        (e.g., 1 - (check secondary trigger) - 2 - ...)
+    5. Only if to_eval_events is empty, execute the reaction.
+    '''
+
+    # (L2V3) An important question is whether an event can be triggered at or
+    # before the initial simulation time (t ≤ 0). The answer is no: events
+    # can only be triggered after the simulation has started, that is, for t > 0.
+    # If the trigger condition becomes false, before the delay expires, the event
+    # is canceled (As if the persistent attribute of the trigger were set to True, but the project doesn't handle this attribute.
 
     def get_evolution(self):
         return self.evolution

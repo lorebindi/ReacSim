@@ -54,3 +54,7 @@ Please note that the `type`:
 - Events with and without delay are supported.
   - The attribute `useValuesFromTriggerTime` is supported for L2V3 SBML files.
   - Only addition and subtraction of constants and/or identifiers are supported.
+
+## Stochastic rate constant inference
+
+## Gillespie SSA extended with SBML events 
