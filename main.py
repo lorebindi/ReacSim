@@ -17,7 +17,7 @@ T_MAX = 10
     #file_path = os.path.join(current_dir, "Example", "BioModels/l2v3/GastricSlowWaveActivity.xml")
     #file_path = os.path.join(current_dir, "Example", "BioModels/l2v4/Ciliberto2003.xml")
     #file_path = os.path.join(current_dir, "Example", "BioModels/l2v4/You2010_Ge neral_Yeast_mRNA_Translation.xml")
-    file_path_csv = os.path.join(current_dir, "Example", "Inference_of_kinetic_laws")
+    file_path_csv = os.path.join(current_dir, "Example", "Inference_of_stochastic_rate_constant")
 
     parser=Parser(file_path, file_path_csv  )
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     # Setup file paths
     current_dir = os.path.dirname(__file__)
     test_folder = os.path.join(current_dir, "Test")
-    file_path_csv = os.path.join(current_dir, "Example", "Inference_of_kinetic_laws")
+    file_path_csv = os.path.join(current_dir, "Example", "Inference_of_stochastic_rate_constant")
 
     for filename in os.listdir(test_folder):
         if filename.endswith(".xml") and filename[:-4] in file_to_valuate:
