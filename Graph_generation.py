@@ -47,7 +47,7 @@ def plot_gillepsie(evolution, t_max, filename=None, dfs_csv= None):
             os.remove(file_path)  # Elimina il file precedente
         plt.savefig(file_path)
         print(f"Grafico salvato in: {file_path}")'''
-    plt.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/gillespie.png", dpi=900)
+    #plt.savefig("/home/lorenzo/Desktop/ReacSim/Graphs/gillespie.png", dpi=900)
     plt.show()
 
 def ode_plot(rr, t_max, filename, show=True):

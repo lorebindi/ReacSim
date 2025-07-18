@@ -2,6 +2,7 @@
 import argparse
 import time
 from multiprocessing import Process
+from pathlib import Path
 
 from Gillespie_events import *
 from Graph_generation import *
@@ -47,33 +48,49 @@ def run_gillespie(parser, filename):
     except Exception as e:
         print(f"{RED}[Gillespie ERROR] {filename}: {e}{RESET}")
 
-# --- Entry point ---
 if __name__ == '__main__':
-    # Parse command-line arguments
-    parser_args = argparse.ArgumentParser(description="Run Gillespie with optional timeout and ODE fallback.")
-    parser_args.add_argument("--max-time-gillespie", type=float, default=0.0,
-                             help="Max time (in seconds) for Gillespie simulation. If 0, run without timeout.")
-    args = parser_args.parse_args()
+    # Single parser with all command-line options
+    parser = argparse.ArgumentParser(
+        description="Run Gillespie with optional timeout and ODE fallback. Process SBML files."
+    )
 
+    # Optional timeout for Gillespie simulation
+    parser.add_argument(
+        "--max-time-gillespie",
+        type=float,
+        default=0.0,
+        help="Max time (in seconds) for Gillespie simulation. If 0, run without timeout."
+    )
+
+    # One or more SBML files to process
+    parser.add_argument(
+        '--filesbml',
+        type=Path,
+        nargs='+',
+        required=True,
+        help="One or more SBML file paths to process"
+    )
+
+    # Parse all arguments
+    args = parser.parse_args()
+
+    # Read values
     MAX_TIME_GILLESPIE = args.max_time_gillespie
+    files_to_process = [p.resolve() for p in args.filesbml]  # Absolute paths
 
-    # List of models to evaluate
-    file_to_valuate = ["SIR_p"]
-
-    # Setup file paths
+    # Path to save CSVs
     current_dir = os.path.dirname(__file__)
-    test_folder = os.path.join(current_dir, "Test")
     file_path_csv = os.path.join(current_dir, "Example", "Inference_of_stochastic_rate_constant")
 
-    for filename in os.listdir(test_folder):
-        if filename.endswith(".xml") and filename[:-4] in file_to_valuate:
-            file_path = os.path.join(test_folder, filename)
+    for file_path in files_to_process:
+        if file_path.exists() and file_path.suffix == ".xml":
+            filename = file_path.name
             print(f"\nProcessing file: {filename}")
-            parser = Parser.Parser(file_path, file_path_csv)
+            parser_instance = Parser.Parser(str(file_path), file_path_csv)
 
             if MAX_TIME_GILLESPIE > 0.0:
                 # Run Gillespie in a separate process with timeout
-                p = Process(target=run_gillespie, args=(parser, filename))
+                p = Process(target=run_gillespie, args=(parser_instance, filename))
                 p.start()
                 p.join(timeout=MAX_TIME_GILLESPIE)
 
@@ -85,12 +102,14 @@ if __name__ == '__main__':
                     print(f"Gillespie simulation for {filename} completed within allowed time.")
             else:
                 # Run Gillespie directly (no timeout)
-                run_gillespie(parser, filename)
+                run_gillespie(parser_instance, filename)
 
             # Always run ODE simulation
             try:
                 t1 = time.time()
-                simulate_odes_road_runner(file_path, T_MAX, filename[:-4])
+                simulate_odes_road_runner(str(file_path), T_MAX, filename[:-4])
                 print(f"Execution time ODEs for {filename}: {time.time() - t1:.3f}")
             except Exception as e:
                 print(f"{RED}[ODEs ERROR] {filename}: {e}{RESET}")
+        else:
+            print(f"{RED}[SKIP] File does not exist or is not .xml: {file_path}{RESET}")
