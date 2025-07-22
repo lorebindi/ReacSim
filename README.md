@@ -12,7 +12,7 @@ To use **ReacSim** without installing it as a package, clone this repository and
   Specifies one or more SBML file paths to process. Both relative and absolute paths are supported.
 
 - `--max-time-gillespie <time>`  
-  Defines a timeout (in seconds) for the Gillespie simulation.
+  Defines a timeout (in seconds) for the Gillespie simulation (optional)
   - If `time > 0`:
     - The Gillespie simulation runs with a timeout.
     - If the simulation completes within the timeout, the result is used.
