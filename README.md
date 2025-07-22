@@ -91,7 +91,6 @@ In standard Gillespie simulation, system dynamics are entirely driven by reactio
 In contrast, **SBML events** model discrete and instantaneous changes in the system (e.g., triggering a signal or instant concentration jump).  
 Due to their fundamentally different nature, events and reactions must be handled in distinct phases of the simulation.
 
----
 
 ### Simulation Workflow Overview
 
