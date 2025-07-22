@@ -9,7 +9,6 @@ from Graph_generation import *
 from ODE_simulation import *
 import Parser
 
-T_MAX = 10
 
 '''if __name__ == '__main__':
 
@@ -35,7 +34,7 @@ T_MAX = 10
 '''t = time.time()
     simulate_odes_road_runner(file_path, T_MAX)
     print(f"Execution time ODEs: {time.time() - t:.3f}")'''
-
+T_MAX=0
 
 def run_gillespie(parser, filename):
     try:
@@ -48,7 +47,7 @@ def run_gillespie(parser, filename):
     except Exception as e:
         print(f"{RED}[Gillespie ERROR] {filename}: {e}{RESET}")
 
-if __name__ == '__main__':
+def main():
     # Single parser with all command-line options
     parser = argparse.ArgumentParser(
         description="Run Gillespie with optional timeout and ODE fallback. Process SBML files."
@@ -70,13 +69,19 @@ if __name__ == '__main__':
         required=True,
         help="One or more SBML file paths to process"
     )
-
+    parser.add_argument(
+        "--t_max",
+        type=float,
+        default=0.0,
+        help="T_MAX limit fo the simulation"
+    )
     # Parse all arguments
     args = parser.parse_args()
 
     # Read values
     MAX_TIME_GILLESPIE = args.max_time_gillespie
     files_to_process = [p.resolve() for p in args.filesbml]  # Absolute paths
+    T_MAX = args.t_max
 
     # Path to save CSVs
     current_dir = os.path.dirname(__file__)
@@ -113,3 +118,6 @@ if __name__ == '__main__':
                 print(f"{RED}[ODEs ERROR] {filename}: {e}{RESET}")
         else:
             print(f"{RED}[SKIP] File does not exist or is not .xml: {file_path}{RESET}")
+
+if __name__ == '__main__':
+    main()
